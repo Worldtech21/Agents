@@ -1,0 +1,6 @@
+Help me with the Agentic workflow for the IAM (Identity and Access Management) Automation or assistance on recommending the appropriate entitlements, where it should have both options i.e. it can run autonomously when new user needs to be onboarded or user can chat for self assistance.
+
+Lets first built autonomus part with the following requirements:
+1. Supervisor Agent will receive the employee id from the system or when it is called.
+2. Planner Agent will create the plan to solve and get the appropriate recommendation on the entitlements.
+3. Peer Analysis Agent will use the connected Peer Affinity MCP to get the list of the tools for fetching details of entitlements basis the peer analysis done by the using the employee id.

@@ -1,7 +1,7 @@
 """Ports — the interfaces the inner layers depend on.
 
 Infrastructure supplies concrete adapters for each of these Protocols.  Because
-services depend on the Protocol rather than the adapter, swapping Anthropic for
+services depend on the Protocol rather than the adapter, swapping Gemini for
 another provider, or MCP for a local tool registry, is a one-file change.
 """
 

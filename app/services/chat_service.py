@@ -64,7 +64,7 @@ class ChatService:
 
 
 def _flatten(content: Any) -> str:
-    """Collapse Anthropic's block-list content into plain text.
+    """Collapse block-list message content into plain text.
 
     With thinking enabled, ``content`` is a list of blocks; only the ``text``
     blocks belong in the answer field (thinking is surfaced via the stream).

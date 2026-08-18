@@ -16,7 +16,7 @@ streaming **every event LangGraph emits**.
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
 
-cp .env.example .env          # then set ANTHROPIC_API_KEY and your MCP URLs
+cp .env.example .env          # then set GOOGLE_API_KEY and your MCP URLs
 uvicorn app.main:app --reload
 ```
 
@@ -37,8 +37,9 @@ curl -N -X POST localhost:8000/api/v1/chat/stream \
 ## Layers
 
 Dependencies point **inward only**. `domain/` imports nothing from the project; `api/` imports
-everything. Swapping Anthropic for another provider, or MCP for a local tool registry, is a
-one-file change because the inner layers depend on Protocols in `domain/ports.py`, not on adapters.
+everything. Swapping Gemini for another provider, or MCP for a local tool registry, is a
+configuration change because the inner layers depend on Protocols in `domain/ports.py`, not on
+adapters.
 
 ```
 app/
@@ -55,7 +56,8 @@ app/
 │   └── ports.py                ChatModelProvider, ToolProvider, AgentBuilder, CheckpointerFactory
 │
 ├── infrastructure/             Adapters implementing the ports
-│   ├── llm/anthropic_provider.py    ChatAnthropic construction + caching
+│   ├── llm/factory.py               Multi-provider model construction + caching
+│   ├── llm/providers.py             One adapter per vendor (Gemini is the default)
 │   ├── mcp/client.py                MultiServerMCPClient wrapper, graceful degradation
 │   ├── checkpoint/factory.py        Thread persistence
 │   └── streaming/
@@ -203,22 +205,37 @@ The factory, supervisor, graph builder and API need no changes — the roster is
 
 ## Model configuration
 
-Defaults target **Claude Opus 5** with **adaptive thinking**, which is the recommended
-configuration for agentic work on current Claude models:
+Defaults target **Google Gemini 3.7 Flash** through `langchain-google-genai`:
 
 | Setting | Default | Notes |
 |---|---|---|
-| `LLM_MODEL` | `claude-opus-5` | `LLM_SUPERVISOR_MODEL` can point routing at a cheaper model |
-| `LLM_EFFORT` | `high` | `low`…`max`. `xhigh` suits the hardest agentic runs |
-| `LLM_THINKING` | `adaptive` | The model decides how much to think per request |
-| `LLM_THINKING_DISPLAY` | `summarized` | Surfaces reasoning in the stream; `omitted` reads as a long pause |
-| `LLM_MAX_TOKENS` | `64000` | Caps thinking **+** response text together |
+| `LLM_PROVIDER` | `google_genai` | Any name registered in `app/infrastructure/llm/providers.py` |
+| `LLM_MODEL` | `gemini-3.7-flash` | `LLM_SUPERVISOR_MODEL` can point routing at a cheaper model |
+| `GOOGLE_API_KEY` | — | Required. `GOOGLE_GENAI_API_KEY` and `LLM_API_KEY` also work |
+| `LLM_MAX_TOKENS` | `64000` | Sent as Gemini's `max_output_tokens` |
+| `LLM_TEMPERATURE` / `LLM_TOP_P` | unset | Honoured by Gemini; left to the model's own defaults |
 
-`temperature` / `top_p` / `top_k` are deliberately never sent — Claude Opus 5 rejects them with a
-400. Steer behaviour through the prompts in `app/agents/prompts.py`.
+`LLM_EFFORT` / `LLM_THINKING` / `LLM_THINKING_DISPLAY` are Anthropic-shaped and are ignored while
+`LLM_PROVIDER=google_genai`. Gemini's reasoning controls are model-dependent, so pass them
+explicitly when your model supports them:
 
-Note `LLM_THINKING=disabled` is only valid at effort `high` or lower on Opus 5; pairing it with
-`xhigh`/`max` returns a 400.
+```bash
+LLM_EXTRA_PARAMS={"thinking_budget": 8192, "include_thoughts": true}
+```
+
+### Other providers
+
+`LLM_PROVIDER` selects the vendor and each one ships as an optional extra:
+
+```bash
+pip install -e ".[openai]"     # then LLM_PROVIDER=openai, LLM_MODEL=gpt-4o
+pip install -e ".[anthropic]"  # then LLM_PROVIDER=anthropic, LLM_MODEL=claude-opus-5
+```
+
+Registered names: `google_genai`, `anthropic`, `openai`, `openai_compatible`, `azure_openai`,
+`bedrock`, `ollama`, `groq`, `mistral`. Each adapter declares which parameters its vendor actually
+honours, so unsupported ones are dropped rather than silently ignored by the SDK.
+`LLM_SUPERVISOR_PROVIDER` can route the supervisor at a different vendor than the workers.
 
 ---
 

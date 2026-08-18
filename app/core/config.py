@@ -53,6 +53,10 @@ class Settings(BaseSettings):
         env_file_encoding="utf-8",
         extra="ignore",
         case_sensitive=False,
+        # Fields carrying a validation_alias (GOOGLE_API_KEY, AWS_REGION) are
+        # otherwise settable *only* by that alias — direct construction in tests
+        # would silently drop the field-name spelling.
+        populate_by_name=True,
     )
 
     # ---------------------------------------------------------------- app
@@ -71,23 +75,24 @@ class Settings(BaseSettings):
 
     # ---------------------------------------------------------------- llm
     #: Which registered provider serves models. See app/infrastructure/llm/providers.py.
-    llm_provider: str = "anthropic"
+    llm_provider: str = "google_genai"
     #: Optional different provider for the supervisor (e.g. a cheaper router).
     llm_supervisor_provider: str | None = None
 
-    llm_model: str = "claude-opus-5"
+    llm_model: str = "gemini-3.7-flash"
     llm_supervisor_model: str | None = None
     llm_max_tokens: int = 64_000
     llm_timeout_seconds: float = 600.0
     llm_max_retries: int = 2
     llm_base_url: str | None = None
 
-    #: Applied only where the provider supports them — Claude Opus 5 / Sonnet 5
-    #: reject both with a 400, so the Anthropic adapter drops them.
+    #: Applied only where the provider supports them. Gemini honours both;
+    #: adapters for models that reject them (Claude Opus 5 / Sonnet 5) drop them.
     llm_temperature: float | None = None
     llm_top_p: float | None = None
 
-    #: Anthropic-only; ignored by providers without adaptive thinking.
+    #: Anthropic-shaped thinking controls; the Gemini adapter ignores them
+    #: (Gemini's own thinking knobs go through LLM_EXTRA_PARAMS).
     llm_effort: Literal["low", "medium", "high", "xhigh", "max"] = "high"
     llm_thinking: Literal["adaptive", "disabled"] = "adaptive"
     llm_thinking_display: Literal["summarized", "omitted"] = "summarized"
@@ -100,14 +105,15 @@ class Settings(BaseSettings):
     # Explicit aliases matter: pydantic-settings loads `.env` into this object
     # but NOT into os.environ, so a conventional name like GOOGLE_API_KEY would
     # otherwise never be seen.
-    anthropic_api_key: str | None = None
-    openai_api_key: str | None = None
-    groq_api_key: str | None = None
-    mistral_api_key: str | None = None
+    #: The default provider's credential: GOOGLE_API_KEY or GOOGLE_GENAI_API_KEY.
     google_genai_api_key: str | None = Field(
         default=None,
         validation_alias=AliasChoices("GOOGLE_GENAI_API_KEY", "GOOGLE_API_KEY"),
     )
+    anthropic_api_key: str | None = None
+    openai_api_key: str | None = None
+    groq_api_key: str | None = None
+    mistral_api_key: str | None = None
     azure_openai_api_key: str | None = None
     openai_compatible_api_key: str | None = None
 
@@ -145,27 +151,42 @@ class Settings(BaseSettings):
     mcp_required: bool = False
     mcp_connect_timeout_seconds: float = 30.0
 
-    mcp_research_url: str | None = None
-    mcp_research_transport: MCPTransport = "streamable_http"
-    mcp_research_headers: Annotated[dict[str, str], NoDecode] = Field(default_factory=dict)
+    mcp_new_joiners_url: str | None = None
+    mcp_new_joiners_transport: MCPTransport = "streamable_http"
+    mcp_new_joiners_headers: Annotated[dict[str, str], NoDecode] = Field(default_factory=dict)
 
-    mcp_knowledge_url: str | None = None
-    mcp_knowledge_transport: MCPTransport = "streamable_http"
-    mcp_knowledge_headers: Annotated[dict[str, str], NoDecode] = Field(default_factory=dict)
+    mcp_peer_affinity_url: str | None = None
+    mcp_peer_affinity_transport: MCPTransport = "streamable_http"
+    mcp_peer_affinity_headers: Annotated[dict[str, str], NoDecode] = Field(default_factory=dict)
 
-    mcp_automation_url: str | None = None
-    mcp_automation_transport: MCPTransport = "streamable_http"
-    mcp_automation_headers: Annotated[dict[str, str], NoDecode] = Field(default_factory=dict)
+    mcp_identities_url: str | None = None
+    mcp_identities_transport: MCPTransport = "streamable_http"
+    mcp_identities_headers: Annotated[dict[str, str], NoDecode] = Field(default_factory=dict)
 
+    mcp_entitlements_url: str | None = None
+    mcp_entitlements_transport: MCPTransport = "streamable_http"
+    mcp_entitlements_headers: Annotated[dict[str, str], NoDecode] = Field(default_factory=dict)
+    
+    mcp_sod_test_url: str | None = None
+    mcp_sod_test_transport: MCPTransport = "streamable_http"
+    mcp_sod_test_headers: Annotated[dict[str, str], NoDecode] = Field(default_factory=dict)
+    
+    mcp_policy_url: str | None = None
+    mcp_policy_transport: MCPTransport = "streamable_http"
+    mcp_policy_headers: Annotated[dict[str, str], NoDecode] = Field(default_factory=dict)
+    
     # Optional escape hatch for servers beyond the three first-class ones.
     # Shape: {"name": {"url": "...", "transport": "streamable_http", "headers": {}}}
     mcp_extra_servers: Annotated[dict[str, Any], NoDecode] = Field(default_factory=dict)
 
     # ------------------------------------------------------------ parsing
     @field_validator(
-        "mcp_research_headers",
-        "mcp_knowledge_headers",
-        "mcp_automation_headers",
+        "mcp_new_joiners_headers",
+        "mcp_peer_affinity_headers",
+        "mcp_identities_headers",
+        "mcp_policy_headers",
+        "mcp_sod_test_headers",
+        "mcp_entitlements_headers",
         "mcp_extra_servers",
         "llm_extra_params",
         mode="before",
@@ -202,9 +223,12 @@ class Settings(BaseSettings):
         """
         servers: dict[str, dict[str, Any]] = {}
         first_class = (
-            ("research", self.mcp_research_url, self.mcp_research_transport, self.mcp_research_headers),
-            ("knowledge", self.mcp_knowledge_url, self.mcp_knowledge_transport, self.mcp_knowledge_headers),
-            ("automation", self.mcp_automation_url, self.mcp_automation_transport, self.mcp_automation_headers),
+            ("new_joiners_mcp", self.mcp_new_joiners_url, self.mcp_new_joiners_transport, self.mcp_new_joiners_headers),
+            ("peer_affinity_mcp", self.mcp_peer_affinity_url, self.mcp_peer_affinity_transport, self.mcp_peer_affinity_headers),
+            ("identities_mcp", self.mcp_identities_url, self.mcp_identities_transport, self.mcp_identities_headers),
+            ("sod_test_mcp", self.mcp_sod_test_url, self.mcp_sod_test_transport, self.mcp_sod_test_headers),
+            ("policy_mcp", self.mcp_policy_url, self.mcp_policy_transport, self.mcp_policy_headers),
+            ("entitlements_mcp", self.mcp_entitlements_url, self.mcp_entitlements_transport, self.mcp_entitlements_headers),
         )
         for name, url, transport, headers in first_class:
             if is_placeholder(url):

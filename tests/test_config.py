@@ -84,10 +84,12 @@ def test_comma_separated_lists_parse_from_env_style_strings():
 
 
 def test_supervisor_model_falls_back_to_the_default_model():
-    assert Settings(llm_model="claude-opus-5").supervisor_model == "claude-opus-5"
+    assert Settings(llm_model="gemini-3.7-flash").supervisor_model == "gemini-3.7-flash"
     assert (
-        Settings(llm_model="claude-opus-5", llm_supervisor_model="claude-sonnet-5").supervisor_model
-        == "claude-sonnet-5"
+        Settings(
+            llm_model="gemini-3.7-flash", llm_supervisor_model="gemini-2.5-flash"
+        ).supervisor_model
+        == "gemini-2.5-flash"
     )
 
 

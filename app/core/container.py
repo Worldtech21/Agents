@@ -20,7 +20,7 @@ from app.domain.ports import ChatModelProvider, ToolProvider
 from app.graph.builder import GraphBuilder
 from app.graph.runner import GraphRunner
 from app.infrastructure.checkpoint.factory import CheckpointerFactoryImpl
-from app.infrastructure.llm.anthropic_provider import AnthropicChatModelProvider
+from app.infrastructure.llm.factory import LLMFactory
 from app.infrastructure.mcp.client import MCPToolProvider
 from app.services.agent_service import AgentService
 from app.services.chat_service import ChatService
@@ -48,7 +48,9 @@ class ApplicationContainer:
         self.settings = settings
         self.specs = specs or DEFAULT_AGENT_SPECS
 
-        self.model_provider = model_provider or AnthropicChatModelProvider(settings)
+        # LLMFactory serves whichever vendor `LLM_PROVIDER` names, so switching
+        # providers is a configuration change, not a code change.
+        self.model_provider = model_provider or LLMFactory(settings)
         self.tool_provider = tool_provider or MCPToolProvider(settings)
         self.checkpointer_factory = CheckpointerFactoryImpl(settings)
 

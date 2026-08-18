@@ -17,11 +17,11 @@ from langchain_core.utils.function_calling import convert_to_openai_tool
 from app.core.config import Settings
 from app.domain.models import AgentSpec
 
-os.environ.setdefault("ANTHROPIC_API_KEY", "test-key-not-used")
+os.environ.setdefault("GOOGLE_API_KEY", "test-key-not-used")
 
 
 class FakeChatModel(BaseChatModel):
-    """Deterministic stand-in for ChatAnthropic.
+    """Deterministic stand-in for the configured provider's chat model.
 
     Replies with a canned answer and records bound tools, which is enough to
     exercise agent construction, supervisor routing and every stream mode.
@@ -88,7 +88,7 @@ class FakeToolProvider:
 @pytest.fixture
 def settings() -> Settings:
     return Settings(
-        anthropic_api_key="test-key",
+        google_genai_api_key="test-key",
         environment="local",
         graph_checkpointer="memory",
         mcp_research_url=None,

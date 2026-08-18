@@ -19,7 +19,7 @@ from app.infrastructure.llm.base import (
 
 
 class AnthropicAdapter(ProviderAdapter):
-    """Claude via ``langchain-anthropic`` — the default provider."""
+    """Claude via ``langchain-anthropic`` (optional: ``pip install -e '.[anthropic]'``)."""
 
     name = "anthropic"
     package = "langchain-anthropic"
@@ -110,16 +110,26 @@ class AzureOpenAIAdapter(ProviderAdapter):
 
 
 class GoogleGenAIAdapter(ProviderAdapter):
-    """Gemini via ``langchain-google-genai``."""
+    """Gemini via ``langchain-google-genai`` — the default provider.
+
+    ``ChatGoogleGenerativeAI`` names its fields ``google_api_key`` /
+    ``max_output_tokens``, but both carry the aliases this adapter passes
+    (``api_key`` / ``max_tokens``) and the class sets ``populate_by_name``, so
+    the normalised spellings land on the right fields.
+
+    Gemini's own reasoning controls (``thinking_budget``, ``thinking_level``,
+    ``include_thoughts``) are model-dependent, so they are not sent by default —
+    opt in per deployment through ``LLM_EXTRA_PARAMS``.
+    """
 
     name = "google_genai"
     package = "langchain-google-genai"
     import_path = "langchain_google_genai"
     class_name = "ChatGoogleGenerativeAI"
     env_key = "GOOGLE_API_KEY"
-    default_model = "gemini-2.0-flash"
-    # No stream_usage: ChatGoogleGenerativeAI warns "Unexpected argument" and
-    # ignores it.
+    default_model = "gemini-3.7-flash"
+    # No stream_usage: ChatGoogleGenerativeAI declares `extra="ignore"`, so the
+    # kwarg is silently dropped rather than honoured.
     capabilities = ProviderCapabilities()
 
     def build_kwargs(self, request: ModelRequest) -> dict[str, Any]:

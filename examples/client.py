@@ -94,7 +94,7 @@ def render(event_name: str, envelope: dict) -> None:
 
 
 def _text_blocks(content) -> list[str]:
-    """Anthropic content is a list of blocks when thinking is enabled."""
+    """Message content is a list of blocks when the model emits reasoning."""
     if isinstance(content, str):
         return [content]
     if isinstance(content, list):

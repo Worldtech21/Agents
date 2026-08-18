@@ -52,7 +52,7 @@ def configure_logging(level: str = "INFO", json_output: bool = False) -> None:
     root.setLevel(level.upper())
 
     # These are chatty at DEBUG and drown out application logs.
-    for noisy in ("httpx", "httpcore", "mcp", "anthropic"):
+    for noisy in ("httpx", "httpcore", "mcp", "google_genai", "google.generativeai"):
         logging.getLogger(noisy).setLevel(max(root.level, logging.INFO))
 
     _CONFIGURED = True

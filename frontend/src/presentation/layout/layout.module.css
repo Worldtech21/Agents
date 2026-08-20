@@ -1,0 +1,51 @@
+.shell {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  background: var(--canvas);
+  color: var(--ink);
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--canvas);
+}
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+  padding: 10px 32px;
+  border-bottom: 1px solid var(--divider);
+  background: var(--parchment);
+  font-size: 14px;
+  letter-spacing: var(--track-14);
+  color: var(--ink-80);
+}
+
+.bannerMessage {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.bannerActions {
+  margin-left: auto;
+  flex: none;
+}
+
+.boundary {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  padding: 48px 32px;
+  background: var(--canvas);
+}
+
+.boundaryInner {
+  max-width: 620px;
+  width: 100%;
+}

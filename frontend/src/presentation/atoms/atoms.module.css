@@ -1,0 +1,174 @@
+/* Atoms — the smallest reusable pieces of the design's visual language. */
+
+/* ------------------------------------------------------------- buttons --- */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  cursor: pointer;
+  font-size: 17px;
+  font-weight: 400;
+  letter-spacing: var(--track-17);
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  background: transparent;
+  transition: opacity 0.15s ease, background 0.15s ease;
+}
+
+.button:disabled {
+  opacity: 0.45;
+}
+
+.primary {
+  border: none;
+  background: var(--blue);
+  color: var(--on-blue);
+}
+
+.outline {
+  border-color: var(--blue);
+  color: var(--blue);
+}
+
+.outline:hover:not(:disabled) {
+  background: var(--tint);
+}
+
+.quiet {
+  border-color: var(--hairline);
+  background: var(--pearl);
+  color: var(--ink-80);
+}
+
+.quiet:hover:not(:disabled) {
+  background: var(--row-hover);
+}
+
+.card {
+  border-color: var(--hairline);
+  background: var(--card);
+  color: var(--blue);
+}
+
+.ghost {
+  color: var(--ink-80);
+}
+
+.ghost:hover:not(:disabled) {
+  background: var(--row-hover);
+}
+
+.sizeLg {
+  height: 44px;
+  padding: 0 22px;
+}
+
+.sizeMd {
+  padding: 11px 22px;
+}
+
+.sizeSm {
+  font-size: 14px;
+  letter-spacing: var(--track-14);
+  padding: 8px 18px;
+}
+
+.sizeXs {
+  font-size: 12px;
+  letter-spacing: var(--track-12);
+  padding: 5px 12px;
+}
+
+.busy {
+  opacity: 0.55;
+}
+
+/* ---------------------------------------------------------------- dots --- */
+
+.dot {
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.dotSm {
+  width: 6px;
+  height: 6px;
+}
+
+.dotLg {
+  width: 8px;
+  height: 8px;
+}
+
+.pulsing {
+  animation: blip 0.9s ease-in-out infinite;
+}
+
+.statusLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 14px;
+  letter-spacing: var(--track-14);
+}
+
+/* ------------------------------------------------------------ progress --- */
+
+.track {
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--divider);
+  overflow: hidden;
+}
+
+.fill {
+  height: 100%;
+  background: var(--blue);
+  transition: width 0.3s ease;
+}
+
+/* --------------------------------------------------------------- chips --- */
+
+.chip {
+  font-size: 12px;
+  letter-spacing: var(--track-12);
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  background: var(--card);
+  border: 1px solid var(--hairline);
+  color: var(--ink-48);
+}
+
+/* ------------------------------------------------------------- spinner --- */
+
+.spinner {
+  animation: spin 0.9s linear infinite;
+  transform-origin: center;
+}
+
+/* ------------------------------------------------------------ skeleton --- */
+
+.skeleton {
+  border-radius: 6px;
+  background: linear-gradient(
+    90deg,
+    var(--skeleton) 25%,
+    var(--row-hover) 37%,
+    var(--skeleton) 63%
+  );
+  background-size: 300% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+.skeletonPill {
+  border-radius: var(--radius-pill);
+}
+
+.skeletonCard {
+  border-radius: var(--radius-card);
+}

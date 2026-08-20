@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+  <style>
+    *,*::before,*::after{box-sizing:border-box}
+    body{margin:0;background:#0d0f12;color:#e6e8eb;font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:14px;overflow:hidden}
+    h1,h2,h3,h4,h5{margin:0;font-weight:600;letter-spacing:-.015em;line-height:1.15}
+    a{color:#8fb0d1;text-decoration:none}
+    a:hover{color:#b6cee6}
+    button{font-family:inherit;color:inherit}
+    input{font-family:inherit}
+    :focus{outline:none}
+    :focus-visible{outline:1.5px solid #6f97bf;outline-offset:2px}
+    ::selection{background:rgba(111,151,191,.32)}
+    ::-webkit-scrollbar{width:8px;height:8px}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.09)}
+    ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.16)}
+    @keyframes blip{0%,100%{opacity:.35}50%{opacity:1}}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    @keyframes rise{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  </style>
+</helmet>
+
+<div style="display:flex;height:100vh;width:100%;background:#0d0f12">
+
+  <aside style="width:238px;flex:none;display:flex;flex-direction:column;gap:24px;padding:18px 14px;border-right:1px solid rgba(255,255,255,.08);background:#0b0d10">
+    <div style="display:flex;align-items:center;gap:9px;padding:2px 6px">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#6f97bf" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 4 6.5v5c0 4.6 3.3 8.4 8 9.5 4.7-1.1 8-4.9 8-9.5v-5L12 3Z"></path><path d="M9.5 12l1.9 1.9 3.6-3.8"></path></svg>
+      <div style="display:flex;flex-direction:column;line-height:1.15">
+        <span style="font-weight:600;font-size:14px">Access Advisor</span>
+        <span style="font-size:10.5px;color:rgba(230,232,235,.4);letter-spacing:.03em">Entitlement recommendations</span>
+      </div>
+    </div>
+
+    <nav style="display:flex;flex-direction:column;gap:2px">
+      <div style="font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:rgba(230,232,235,.3);padding:0 8px 6px">Workspace</div>
+      <sc-for list="{{ nav }}" as="item" hint-placeholder-count="3">
+        <button onClick="{{ item.go }}" style="display:grid;grid-template-columns:15px 1fr auto;align-items:center;gap:10px;width:100%;text-align:left;cursor:pointer;font-size:13.5px;font-weight:500;padding:8px 9px;border:none;border-left:2px solid {{ item.mark }};background:{{ item.bg }};color:{{ item.fg }}" style-hover="background:rgba(255,255,255,.05);color:#e6e8eb">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="{{ item.icon }}"></path></svg>
+          <span>{{ item.label }}</span>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(230,232,235,.38)">{{ item.badge }}</span>
+        </button>
+      </sc-for>
+    </nav>
+
+    <div style="display:flex;flex-direction:column;gap:7px">
+      <div style="display:flex;align-items:center;gap:8px;padding:0 8px">
+        <span style="font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:rgba(230,232,235,.3)">Agent mesh</span>
+        <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:#7fb79a">{{ meshLabel }}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;border-top:1px solid rgba(255,255,255,.07)">
+        <sc-for list="{{ agents }}" as="a" hint-placeholder-count="7">
+          <div style="display:grid;grid-template-columns:10px 1fr auto;align-items:center;gap:9px;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.04);background:{{ a.rowBg }}">
+            <span style="width:5px;height:5px;justify-self:center;border-radius:50%;background:{{ a.dot }};animation:{{ a.anim }}"></span>
+            <span style="font-size:11.5px;color:{{ a.fg }};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ a.name }}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:rgba(230,232,235,.3)">{{ a.tools }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="margin-top:auto;display:flex;flex-direction:column;gap:6px;padding:10px 11px;border:1px solid rgba(230,180,110,.22);background:rgba(230,180,110,.05)">
+      <div style="display:flex;align-items:center;gap:7px">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#d9ab6c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10.5" width="16" height="9.5"></rect><path d="M8.5 10.5V7a3.5 3.5 0 0 1 7 0v3.5"></path></svg>
+        <span style="font-size:11px;font-weight:600;color:#d9ab6c">Read-only</span>
+      </div>
+      <p style="margin:0;font-size:10.5px;line-height:1.5;color:rgba(230,232,235,.45)">Nothing here grants, revokes or approves access. Recommendations hand off to the IAM request workflow.</p>
+    </div>
+  </aside>
+
+  <main style="flex:1;min-width:0;display:flex;flex-direction:column">
+    <header style="display:flex;align-items:center;gap:16px;padding:13px 22px;border-bottom:1px solid rgba(255,255,255,.08)">
+      <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+        <span style="font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:rgba(230,232,235,.34)">{{ crumb }}</span>
+        <h4 style="font-size:18.5px">{{ title }}</h4>
+      </div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+        <div style="display:flex;align-items:center;gap:8px;padding:0 10px;height:34px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.03)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="rgba(230,232,235,.4)" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.6-3.6"></path></svg>
+          <input value="{{ empQuery }}" onChange="{{ setQuery }}" onKeyDown="{{ queryKey }}" placeholder="NJ1004" style="width:150px;font-family:'IBM Plex Mono',monospace;font-size:12px;background:transparent;border:none;color:#e6e8eb"></input>
+        </div>
+        <button onClick="{{ runRecommendation }}" style="display:flex;align-items:center;gap:8px;height:34px;cursor:pointer;font-size:13px;font-weight:600;padding:0 14px;border:1px solid #6f97bf;background:#6f97bf;color:#0b0d10;opacity:{{ runOpacity }}" style-hover="background:#82a7cb">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" style="animation:{{ runSpin }}"><path d="{{ runIcon }}"></path></svg>
+          {{ runLabel }}
+        </button>
+      </div>
+    </header>
+    <sc-if value="{{ isQueue }}" hint-placeholder-val="{{ true }}">
+      <div style="flex:1;min-height:0;overflow:auto;padding:20px 22px 36px">
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.08);margin-bottom:22px">
+          <sc-for list="{{ stats }}" as="s" hint-placeholder-count="4">
+            <div style="display:flex;flex-direction:column;gap:9px;padding:14px 15px;background:#0d0f12">
+              <span style="font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(230,232,235,.38)">{{ s.label }}</span>
+              <div style="display:flex;align-items:baseline;gap:6px">
+                <span style="font-family:'IBM Plex Mono',monospace;font-weight:500;font-size:31px;line-height:1;letter-spacing:-.03em;color:{{ s.color }}">{{ s.value }}</span>
+                <span style="font-size:11px;color:rgba(230,232,235,.38)">{{ s.unit }}</span>
+              </div>
+              <span style="font-size:11px;line-height:1.4;color:rgba(230,232,235,.4)">{{ s.note }}</span>
+              <div style="height:2px;background:rgba(255,255,255,.07)"><div style="height:100%;width:{{ s.bar }};background:{{ s.color }}"></div></div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display:flex;align-items:baseline;gap:11px;margin-bottom:10px">
+          <h5 style="font-size:14.5px">Onboarding intake</h5>
+          <span style="font-size:11.5px;color:rgba(230,232,235,.38)">Six joiners handed over by HR · sorted by start date</span>
+        </div>
+
+        <div style="border:1px solid rgba(255,255,255,.08)">
+          <div style="display:grid;grid-template-columns:88px 1.25fr 1.6fr 82px 128px 138px 92px;gap:14px;padding:9px 16px;background:rgba(255,255,255,.03);border-bottom:1px solid rgba(255,255,255,.08);font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:rgba(230,232,235,.36)">
+            <span>ID</span><span>Name</span><span>Department · role</span><span>Start</span><span>Peer group</span><span>State</span><span></span>
+          </div>
+          <sc-for list="{{ queue }}" as="row" hint-placeholder-count="6">
+            <div style="display:grid;grid-template-columns:88px 1.25fr 1.6fr 82px 128px 138px 92px;gap:14px;align-items:center;padding:11px 16px;border-bottom:1px solid rgba(255,255,255,.05)" style-hover="background:rgba(111,151,191,.07)">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#8fb0d1">{{ row.id }}</span>
+              <span style="font-weight:500;font-size:13.5px">{{ row.name }}</span>
+              <span style="font-size:12.5px;color:rgba(230,232,235,.55)">{{ row.role }}</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:rgba(230,232,235,.5)">{{ row.start }}</span>
+              <div style="display:flex;align-items:center;gap:8px">
+                <div style="flex:1;height:2px;background:rgba(255,255,255,.09)"><div style="height:100%;width:{{ row.peerBar }};background:#6f97bf"></div></div>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:rgba(230,232,235,.45)">{{ row.peers }}</span>
+              </div>
+              <span style="justify-self:start;display:inline-flex;align-items:center;gap:6px;font-size:11px;padding:3px 8px;background:{{ row.stateBg }};color:{{ row.stateFg }};border:1px solid {{ row.stateBorder }}">
+                <span style="width:4px;height:4px;border-radius:50%;background:currentColor"></span>{{ row.status }}
+              </span>
+              <button onClick="{{ row.go }}" style="justify-self:end;cursor:pointer;font-size:12px;font-weight:500;padding:5px 11px;border:1px solid rgba(255,255,255,.14);background:transparent" style-hover="background:rgba(111,151,191,.16);border-color:rgba(111,151,191,.45)">{{ row.action }}</button>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isReport }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 322px">
+        <div style="overflow:auto;padding:20px 22px 40px">
+
+          <div style="display:grid;grid-template-columns:1.05fr 1fr;border:1px solid rgba(255,255,255,.09);margin-bottom:20px">
+            <div style="padding:18px 20px;display:flex;flex-direction:column;gap:12px;border-right:1px solid rgba(255,255,255,.08);background:rgba(111,151,191,.05)">
+              <span style="font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:rgba(230,232,235,.38)">Employee profile</span>
+              <div style="display:flex;align-items:center;gap:12px">
+                <div style="width:44px;height:44px;flex:none;display:grid;place-items:center;border:1px solid rgba(111,151,191,.4);background:rgba(111,151,191,.12);font-family:'IBM Plex Mono',monospace;font-size:15px;color:#8fb0d1">{{ emp.initials }}</div>
+                <div style="display:flex;flex-direction:column;gap:3px;min-width:0">
+                  <h3 style="font-size:23px">{{ emp.name }}</h3>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8fb0d1">{{ emp.id }} · {{ emp.status }}</span>
+                </div>
+              </div>
+              <div style="font-size:13px;line-height:1.5;color:rgba(230,232,235,.62)">{{ emp.role }} · {{ emp.level }} — {{ emp.department }}</div>
+            </div>
+            <div style="padding:18px 20px;display:grid;grid-template-columns:1fr 1fr;gap:13px 18px;align-content:start">
+              <sc-for list="{{ empFields }}" as="f" hint-placeholder-count="6">
+                <div style="display:flex;flex-direction:column;gap:2px">
+                  <span style="font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:rgba(230,232,235,.34)">{{ f.label }}</span>
+                  <span style="font-size:12.5px">{{ f.value }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:baseline;gap:11px;margin-bottom:10px">
+            <h5 style="font-size:14.5px">Recommended entitlements</h5>
+            <span style="font-size:11.5px;color:rgba(230,232,235,.38)">Birthright + peer affinity at or above {{ thresholdLabel }}</span>
+            <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;color:rgba(230,232,235,.45)">{{ selectionLabel }}</span>
+          </div>
+
+          <div style="border:1px solid rgba(255,255,255,.09)">
+            <sc-for list="{{ recommended }}" as="e" hint-placeholder-count="4">
+              <div style="display:grid;grid-template-columns:24px minmax(0,1.5fr) 148px 116px minmax(0,1.15fr);align-items:center;gap:16px;padding:13px 15px;border-bottom:1px solid rgba(255,255,255,.06);opacity:{{ e.rowOpacity }}">
+                <button onClick="{{ e.toggle }}" style="width:16px;height:16px;display:grid;place-items:center;cursor:pointer;padding:0;border:1px solid {{ e.checkBd }};background:{{ e.checkBg }}">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#0b0d10" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" style="opacity:{{ e.checkOpacity }}"><path d="m5 13 4.5 4.5L19 7"></path></svg>
+                </button>
+                <div style="display:flex;flex-direction:column;gap:3px;min-width:0">
+                  <span style="font-weight:600;font-size:14.5px">{{ e.name }}</span>
+                  <span style="font-size:11px;color:rgba(230,232,235,.42)"><span style="font-family:'IBM Plex Mono',monospace">{{ e.id }}</span> · {{ e.app }}</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:5px">
+                  <div style="display:flex;align-items:baseline;gap:6px">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:16px;color:#8fb0d1">{{ e.pctLabel }}</span>
+                    <span style="font-size:10.5px;color:rgba(230,232,235,.4)">{{ e.countLabel }} peers hold</span>
+                  </div>
+                  <div style="height:2px;background:rgba(255,255,255,.09)"><div style="height:100%;width:{{ e.pctWidth }};background:#6f97bf"></div></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-size:10.5px;padding:3px 8px;background:{{ e.riskBg }};color:{{ e.riskFg }};border:1px solid {{ e.riskBd }}">{{ e.risk }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:rgba(230,232,235,.36)">{{ e.scoreLabel }}</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                  <span style="font-size:12px;font-weight:500;color:rgba(230,232,235,.8)">{{ e.status }}</span>
+                  <span style="font-size:10.5px;color:rgba(230,232,235,.42)"><span style="font-family:'IBM Plex Mono',monospace;color:#8fb0d1">{{ e.rule }}</span> — {{ e.note }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="display:flex;align-items:baseline;gap:11px;margin:24px 0 10px">
+            <h5 style="font-size:14.5px">Optional — below threshold</h5>
+            <span style="font-size:11.5px;color:rgba(230,232,235,.38)">Not auto-recommended; needs a justified request</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ optional }}" as="o" hint-placeholder-count="2">
+              <div style="display:grid;grid-template-columns:minmax(0,1.3fr) 108px 116px minmax(0,1.5fr);align-items:center;gap:16px;padding:11px 15px;border:1px dashed rgba(255,255,255,.14)">
+                <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                  <span style="font-weight:500;font-size:13.5px">{{ o.name }}</span>
+                  <span style="font-size:10.5px;color:rgba(230,232,235,.4)"><span style="font-family:'IBM Plex Mono',monospace">{{ o.id }}</span> · {{ o.app }}</span>
+                </div>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:rgba(230,232,235,.6)">{{ o.pctLabel }} · {{ o.countLabel }}</span>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <span style="font-size:10.5px;padding:3px 8px;background:{{ o.riskBg }};color:{{ o.riskFg }};border:1px solid {{ o.riskBd }}">{{ o.risk }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:rgba(230,232,235,.36)">{{ o.scoreLabel }}</span>
+                </div>
+                <span style="font-size:11.5px;line-height:1.45;color:rgba(230,232,235,.5)">{{ o.reason }}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <div style="display:grid;grid-template-columns:182px minmax(0,1fr);border:1px solid rgba(255,255,255,.09);margin-top:24px">
+            <div style="padding:17px 19px;display:flex;flex-direction:column;gap:7px;justify-content:center;border-right:1px solid rgba(255,255,255,.08);background:rgba(127,183,154,.05)">
+              <span style="font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:rgba(230,232,235,.38)">Separation of duties</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:30px;line-height:1;color:{{ sod.resultFg }}">{{ sod.result }}</span>
+              <span style="font-size:11px;color:rgba(230,232,235,.42)">{{ sod.scope }}</span>
+            </div>
+            <div style="padding:17px 19px;display:flex;flex-direction:column;gap:11px">
+              <p style="margin:0;font-size:12.5px;line-height:1.5;color:rgba(230,232,235,.68)">{{ sod.summary }}</p>
+              <sc-for list="{{ sod.rules }}" as="r" hint-placeholder-count="2">
+                <div style="display:grid;grid-template-columns:88px 76px minmax(0,1fr);align-items:baseline;gap:12px;padding-top:8px;border-top:1px solid rgba(255,255,255,.06)">
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#8fb0d1">{{ r.id }}</span>
+                  <span style="justify-self:start;font-size:10.5px;padding:2px 7px;background:{{ r.bg }};color:{{ r.fg }};border:1px solid {{ r.bd }}">{{ r.severity }}</span>
+                  <span style="font-size:11.5px;line-height:1.45;color:rgba(230,232,235,.52)">{{ r.text }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+
+          <div style="display:flex;align-items:center;gap:16px;margin-top:22px;padding:14px 17px;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.025)">
+            <div style="display:flex;flex-direction:column;gap:3px;min-width:0">
+              <span style="font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:rgba(230,232,235,.36)">Provisioning handoff</span>
+              <span style="font-size:12.5px;line-height:1.45;color:rgba(230,232,235,.6)">{{ metaInstructions }}</span>
+            </div>
+            <div style="margin-left:auto;display:flex;gap:8px;flex:none">
+              <button onClick="{{ toggleJson }}" style="cursor:pointer;font-size:12.5px;font-weight:500;padding:8px 13px;border:1px solid rgba(255,255,255,.16);background:transparent" style-hover="background:rgba(255,255,255,.06)">{{ jsonLabel }}</button>
+              <button onClick="{{ noop }}" style="cursor:pointer;font-size:12.5px;font-weight:600;padding:8px 13px;border:1px solid #6f97bf;background:#6f97bf;color:#0b0d10" style-hover="background:#82a7cb">Open access request</button>
+            </div>
+          </div>
+
+          <sc-if value="{{ jsonOpen }}" hint-placeholder-val="{{ false }}">
+            <pre style="margin:10px 0 0;padding:15px 17px;max-height:330px;overflow:auto;border:1px solid rgba(255,255,255,.09);background:#0a0c0f;font-family:'IBM Plex Mono',monospace;font-size:11.5px;line-height:1.6;color:#a9c4dc;animation:rise .2s ease">{{ jsonText }}</pre>
+          </sc-if>
+        </div>
+
+        <aside style="display:flex;flex-direction:column;min-height:0;border-left:1px solid rgba(255,255,255,.08);background:#0b0d10">
+          <div style="display:flex;align-items:center;gap:8px;padding:13px 16px;border-bottom:1px solid rgba(255,255,255,.08)">
+            <span style="font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:rgba(230,232,235,.4)">Agent trace</span>
+            <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:10px;color:{{ traceStatusFg }}">{{ traceStatus }}</span>
+          </div>
+          <div style="flex:1;min-height:0;overflow:auto;padding:14px 16px">
+            <sc-for list="{{ traceRows }}" as="t" hint-placeholder-count="7">
+              <div style="display:grid;grid-template-columns:14px minmax(0,1fr);gap:11px">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+                  <span style="width:7px;height:7px;margin-top:4px;border-radius:50%;background:{{ t.dot }};animation:{{ t.anim }}"></span>
+                  <span style="flex:1;width:1px;background:{{ t.line }}"></span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:3px;padding-bottom:15px;min-width:0">
+                  <div style="display:flex;align-items:baseline;gap:7px">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:rgba(230,232,235,.3)">{{ t.num }}</span>
+                    <span style="font-size:12.5px;font-weight:500;color:{{ t.fg }}">{{ t.label }}</span>
+                    <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:{{ t.msFg }}">{{ t.ms }}</span>
+                  </div>
+                  <span style="font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:{{ t.detailFg }}">{{ t.agent }}</span>
+                  <span style="font-size:11.5px;line-height:1.45;color:{{ t.detailFg }}">{{ t.detail }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display:flex;align-items:center;gap:9px;padding:11px 16px;border-top:1px solid rgba(255,255,255,.08)">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:rgba(230,232,235,.36);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ traceMeta }}</span>
+            <button onClick="{{ rerun }}" style="margin-left:auto;flex:none;cursor:pointer;font-size:11.5px;padding:5px 10px;border:1px solid rgba(255,255,255,.14);background:transparent" style-hover="background:rgba(111,151,191,.16)">Replay</button>
+          </div>
+        </aside>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{ isChat }}" hint-placeholder-val="{{ false }}">
+      <div style="flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1fr) 322px">
+        <div style="display:flex;flex-direction:column;min-height:0">
+          <div style="flex:1;min-height:0;overflow:auto;padding:22px 26px;display:flex;flex-direction:column;gap:16px">
+            <sc-for list="{{ chatMessages }}" as="m" hint-placeholder-count="2">
+              <div style="display:flex;flex-direction:column;gap:5px;align-self:{{ m.align }};max-width:74%">
+                <span style="font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:rgba(230,232,235,.32)">{{ m.who }}</span>
+                <div style="padding:12px 14px;border:1px solid {{ m.bd }};background:{{ m.bg }};font-size:13.5px;line-height:1.6;text-wrap:pretty">{{ m.text }}</div>
+                <div style="display:flex;flex-wrap:wrap;gap:6px">
+                  <sc-for list="{{ m.cites }}" as="c" hint-placeholder-count="0">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;padding:2px 7px;border:1px solid rgba(255,255,255,.1);color:rgba(230,232,235,.42)">{{ c }}</span>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+            <sc-if value="{{ chatBusy }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;gap:8px;align-self:flex-start;padding:10px 13px;border:1px solid rgba(255,255,255,.09)">
+                <span style="width:5px;height:5px;border-radius:50%;background:#6f97bf;animation:blip .9s ease-in-out infinite"></span>
+                <span style="font-size:12px;color:rgba(230,232,235,.5)">Supervisor is routing to specialists…</span>
+              </div>
+            </sc-if>
+          </div>
+          <div style="border-top:1px solid rgba(255,255,255,.08);padding:13px 26px 16px;display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;flex-wrap:wrap;gap:7px">
+              <sc-for list="{{ suggestions }}" as="s" hint-placeholder-count="3">
+                <button onClick="{{ s.go }}" style="cursor:pointer;font-size:11.5px;padding:5px 10px;border:1px solid rgba(255,255,255,.12);background:transparent;color:rgba(230,232,235,.65)" style-hover="background:rgba(111,151,191,.14);color:#e6e8eb">{{ s.text }}</button>
+              </sc-for>
+            </div>
+            <div style="display:flex;align-items:flex-end;gap:9px;padding:9px 11px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.03)">
+              <input value="{{ draft }}" onChange="{{ setDraft }}" onKeyDown="{{ draftKey }}" placeholder="Ask about identities, peers, entitlements, SoD or policy…" style="flex:1;min-width:0;font-size:13.5px;background:transparent;border:none;color:#e6e8eb"></input>
+              <button onClick="{{ send }}" style="flex:none;cursor:pointer;font-size:12.5px;font-weight:600;padding:7px 13px;border:1px solid #6f97bf;background:#6f97bf;color:#0b0d10" style-hover="background:#82a7cb">Ask</button>
+            </div>
+            <span style="font-size:10.5px;color:rgba(230,232,235,.34)">Read-only. Requests to change access are refused and pointed at the formal access-request process.</span>
+          </div>
+        </div>
+
+        <aside style="display:flex;flex-direction:column;min-height:0;border-left:1px solid rgba(255,255,255,.08);background:#0b0d10">
+          <div style="display:flex;align-items:center;gap:8px;padding:13px 16px;border-bottom:1px solid rgba(255,255,255,.08)">
+            <span style="font-size:9.5px;letter-spacing:.15em;text-transform:uppercase;color:rgba(230,232,235,.4)">Last run trace</span>
+            <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:10px;color:{{ traceStatusFg }}">{{ traceStatus }}</span>
+          </div>
+          <div style="flex:1;min-height:0;overflow:auto;padding:14px 16px">
+            <sc-for list="{{ traceRows }}" as="t" hint-placeholder-count="7">
+              <div style="display:grid;grid-template-columns:14px minmax(0,1fr);gap:11px">
+                <div style="display:flex;flex-direction:column;align-items:center;gap:3px">
+                  <span style="width:7px;height:7px;margin-top:4px;border-radius:50%;background:{{ t.dot }};animation:{{ t.anim }}"></span>
+                  <span style="flex:1;width:1px;background:{{ t.line }}"></span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:3px;padding-bottom:15px;min-width:0">
+                  <div style="display:flex;align-items:baseline;gap:7px">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:9.5px;color:rgba(230,232,235,.3)">{{ t.num }}</span>
+                    <span style="font-size:12.5px;font-weight:500;color:{{ t.fg }}">{{ t.label }}</span>
+                  </div>
+                  <span style="font-size:11.5px;line-height:1.45;color:{{ t.detailFg }}">{{ t.detail }}</span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </aside>
+      </div>
+    </sc-if>
+  </main>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#6f97bf&quot;,&quot;options&quot;:[&quot;#6f97bf&quot;,&quot;#7fb79a&quot;,&quot;#c58f6a&quot;,&quot;#8f86c8&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;showAgentTrace&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Behavior&quot;},&quot;density&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;comfortable&quot;,&quot;dense&quot;],&quot;default&quot;:&quot;comfortable&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Behavior&quot;}}">
+const AGENTS = [
+  { key: 'supervisor', name: 'Supervisor', tools: '—' },
+  { key: 'joiners', name: 'New Joiners', tools: '3' },
+  { key: 'identities', name: 'Identities', tools: '4' },
+  { key: 'peers', name: 'Peer Affinity', tools: '3' },
+  { key: 'entitlements', name: 'Entitlements', tools: '5' },
+  { key: 'sod', name: 'Separation of Duties', tools: '2' },
+  { key: 'policy', name: 'Policy', tools: '4' },
+];
+
+const ICONS = {
+  queue: 'M4 6h16M4 12h16M4 18h10',
+  report: 'M6 3h9l4 4v14H6zM15 3v4h4',
+  chat: 'M4 5h16v11H9l-5 4z',
+  play: 'M6 4l13 8-13 8z',
+  spin: 'M12 3a9 9 0 1 0 9 9',
+};
+
+const EMPLOYEE = {
+  id: 'NJ1004', name: 'Priya Raghavan', initials: 'PR', status: 'Pre-hire · active',
+  department: 'Finance Operations', role: 'Financial Analyst', level: 'L3',
+  location: 'Bengaluru, IN', manager: 'D. Alvarez (E2211)', costCenter: 'CC-4820', start: '2026-09-01',
+  peerGroup: '5 peers · Finance Ops L3',
+};
+
+const RECOMMENDED = [
+  { id: 'ENT-1042', name: 'SAP FI — Analyst Display', app: 'SAP S/4HANA', pct: 100, count: '5/5', risk: 'Low', score: 12, rule: 'POL-BR-02', note: 'Birthright for Finance Operations', status: 'Recommended (Birthright)' },
+  { id: 'ENT-1187', name: 'Coupa — Invoice Viewer', app: 'Coupa', pct: 80, count: '4/5', risk: 'Low', score: 18, rule: 'POL-EL-11', note: 'Eligible at L3, manager approval', status: 'Recommended (High Affinity)' },
+  { id: 'ENT-2290', name: 'Anaplan — Plan Contributor', app: 'Anaplan', pct: 80, count: '4/5', risk: 'Medium', score: 46, rule: 'POL-EL-07', note: 'Annual certification required', status: 'Recommended (High Affinity)' },
+  { id: 'ENT-3315', name: 'Tableau — Finance Workbooks', app: 'Tableau Cloud', pct: 100, count: '5/5', risk: 'Low', score: 9, rule: 'POL-BR-02', note: 'Birthright for cost center CC-4820', status: 'Recommended (Birthright)' },
+];
+
+const OPTIONAL = [
+  { id: 'ENT-2044', name: 'SAP FI — Journal Entry Post', app: 'SAP S/4HANA', pct: 40, count: '2/5', risk: 'High', score: 78, reason: 'Below 60% affinity threshold; SoD-sensitive with vendor maintenance' },
+  { id: 'ENT-4101', name: 'Concur — Delegate Approver', app: 'SAP Concur', pct: 20, count: '1/5', risk: 'Medium', score: 41, reason: 'Held by one peer only; requires delegation justification' },
+];
+
+const SOD = {
+  result: 'PASS', evaluated: 4,
+  summary: 'No conflict-of-interest rule is broken by the four recommended entitlements. One optional entitlement would break SOD-014 if added to this set.',
+  rules: [
+    { id: 'SOD-014', severity: 'Critical', text: 'Journal entry posting + vendor master maintenance — not triggered (posting not recommended).' },
+    { id: 'SOD-032', severity: 'High', text: 'Invoice approval + payment release — not triggered (neither entitlement in set).' },
+  ],
+};
+
+const TRACE = [
+  { agent: 'joiners', label: 'Validate employee ID', detail: 'NJ1004 → Finance Operations · Analyst · L3 · CC-4820', ms: 340 },
+  { agent: 'peers', label: 'Resolve peer group', detail: '5 peers matched on department + level + cost center', ms: 610 },
+  { agent: 'peers', label: 'Aggregate peer holdings', detail: '11 distinct entitlements, 6 at or above threshold', ms: 480 },
+  { agent: 'entitlements', label: 'Fetch entitlement detail', detail: '6 lookups — application, owner, risk rating', ms: 720 },
+  { agent: 'policy', label: 'Check eligibility clauses', detail: '4 permitted, 1 conditional, 1 restricted at L3', ms: 560 },
+  { agent: 'sod', label: 'Run SoD check on proposed set', detail: '4 entitlements evaluated against 38 rules → PASS', ms: 430 },
+  { agent: 'supervisor', label: 'Assemble recommendation', detail: 'Structured JSON emitted · thread th_9f2c41', ms: 210 },
+];
+
+const QUEUE = [
+  { id: 'NJ1004', name: 'Priya Raghavan', role: 'Finance Operations · Financial Analyst', start: '01 Sep', peers: '5', peerBar: '100%', status: 'Ready to run', tone: 'accent', action: 'Run' },
+  { id: 'NJ1005', name: 'Tomas Lindqvist', role: 'Engineering · Platform Engineer II', start: '01 Sep', peers: '8', peerBar: '100%', status: 'Recommended', tone: 'good', action: 'Open' },
+  { id: 'NJ1006', name: 'Aisha Bello', role: 'Legal · Contracts Counsel', start: '08 Sep', peers: '2', peerBar: '25%', status: 'Thin peer group', tone: 'warn', action: 'Run' },
+  { id: 'NJ1007', name: 'Marc Devereux', role: 'Treasury · Payments Specialist', start: '08 Sep', peers: '4', peerBar: '50%', status: 'SoD review', tone: 'bad', action: 'Open' },
+  { id: 'NJ1008', name: 'Hana Kimura', role: 'Finance Operations · AP Clerk', start: '15 Sep', peers: '6', peerBar: '75%', status: 'Ready to run', tone: 'accent', action: 'Run' },
+  { id: 'NJ1009', name: 'Owen Pryce', role: 'Data · Analytics Engineer', start: '15 Sep', peers: '7', peerBar: '88%', status: 'Recommended', tone: 'good', action: 'Open' },
+];
+
+const SEED_CHAT = [
+  { role: 'user', text: 'Which of Priya\u2019s peers hold Anaplan Plan Contributor, and does policy allow it at L3?' },
+  { role: 'assistant', text: '4 of 5 peers in the Finance Ops L3 group hold ENT-2290 (Anaplan \u2014 Plan Contributor). Policy clause POL-EL-07 permits it at L3 with manager approval and annual certification. Risk rating Medium (46). No SoD rule is triggered by adding it to her current proposed set.', cites: ['Peer Affinity \u00b7 peer_holdings', 'Policy \u00b7 eligibility_clause', 'SoD \u00b7 evaluate_set'] },
+];
+
+const SUGGESTIONS = [
+  'What is ENT-2044 and who owns it?',
+  'Is NJ1007 blocked by any SoD rule?',
+  'Certification cadence for high-risk SAP roles?',
+];
+
+const TONES = {
+  accent: { fg: '#8fb0d1', bg: 'rgba(111,151,191,.12)', bd: 'rgba(111,151,191,.4)' },
+  good: { fg: '#7fb79a', bg: 'rgba(127,183,154,.1)', bd: 'rgba(127,183,154,.34)' },
+  warn: { fg: '#d9ab6c', bg: 'rgba(217,171,108,.1)', bd: 'rgba(217,171,108,.34)' },
+  bad: { fg: '#d18b8b', bg: 'rgba(209,139,139,.1)', bd: 'rgba(209,139,139,.34)' },
+};
+
+const RISK_TONE = { Low: 'good', Medium: 'warn', High: 'bad', Critical: 'bad' };
+
+class Component extends DCLogic {
+  state = {
+    view: 'queue',
+    empQuery: 'NJ1004',
+    running: false,
+    step: -1,
+    done: false,
+    excluded: {},
+    jsonOpen: false,
+    chat: SEED_CHAT,
+    draft: '',
+    chatBusy: false,
+  };
+
+  componentWillUnmount() { this.clear(); }
+
+  clear() { (this.timers || []).forEach(clearTimeout); this.timers = []; }
+
+  startRun(view) {
+    this.clear();
+    this.timers = [];
+    this.setState({ view: view || 'report', running: true, step: -1, done: false, jsonOpen: false });
+    let t = 0;
+    TRACE.forEach((s, i) => {
+      t += s.ms;
+      this.timers.push(setTimeout(() => this.setState({ step: i }), t));
+    });
+    this.timers.push(setTimeout(() => this.setState({ running: false, done: true, step: TRACE.length }), t + 320));
+  }
+
+  ask(text) {
+    const q = (text || '').trim();
+    if (!q) return;
+    this.setState(s => ({ chat: s.chat.concat([{ role: 'user', text: q }]), draft: '', chatBusy: true }));
+    this.clear();
+    this.timers = [setTimeout(() => {
+      this.setState(s => ({
+        chatBusy: false,
+        chat: s.chat.concat([{
+          role: 'assistant',
+          text: 'Answered read-only across the identity graph. This system never creates, updates or approves access \u2014 to change entitlements, raise a formal access request in the IAM workflow.',
+          cites: ['Identities \u00b7 lookup_identity', 'Entitlements \u00b7 describe_entitlement'],
+        }]),
+      }));
+    }, 1400)];
+  }
+
+  navItem(key, label, icon, badge) {
+    const on = this.state.view === key;
+    return {
+      label, badge, icon: ICONS[icon],
+      mark: on ? '#6f97bf' : 'transparent',
+      bg: on ? 'rgba(111,151,191,.12)' : 'transparent',
+      fg: on ? '#e6e8eb' : 'rgba(230,232,235,.62)',
+      go: () => this.setState({ view: key }),
+    };
+  }
+
+  entitlement(e, isOptional) {
+    const tone = TONES[RISK_TONE[e.risk]];
+    const off = !!this.state.excluded[e.id];
+    return {
+      ...e,
+      pctLabel: e.pct + '%',
+      pctWidth: e.pct + '%',
+      countLabel: e.count,
+      riskFg: tone.fg, riskBg: tone.bg, riskBd: tone.bd,
+      scoreLabel: String(e.score).padStart(2, '0'),
+      included: !off,
+      checkBg: off ? 'transparent' : '#6f97bf',
+      checkBd: off ? 'rgba(255,255,255,.22)' : '#6f97bf',
+      checkOpacity: off ? '0' : '1',
+      rowOpacity: off ? '.45' : '1',
+      toggle: () => this.setState(s => ({ excluded: { ...s.excluded, [e.id]: !s.excluded[e.id] } })),
+    };
+  }
+
+  renderVals() {
+    const s = this.state;
+    const view = s.view;
+    const inFlight = s.running;
+    const activeAgent = inFlight && s.step >= 0 ? TRACE[Math.min(s.step, TRACE.length - 1)].agent : null;
+
+    const titles = {
+      queue: { crumb: 'Autonomous mode · HR onboarding handoff', title: 'Provisioning queue' },
+      report: { crumb: 'Recommendation · thread th_9f2c41', title: EMPLOYEE.name + ' — ' + EMPLOYEE.id },
+      chat: { crumb: 'Self-service mode · read-only Q&A', title: 'Access governance console' },
+    };
+
+    const included = RECOMMENDED.filter(e => !s.excluded[e.id]);
+
+    const traceRows = TRACE.map((t, i) => {
+      const state = s.done || i < s.step ? 'done' : i === s.step ? 'active' : 'idle';
+      const agent = AGENTS.find(a => a.key === t.agent);
+      return {
+        label: t.label, detail: t.detail,
+        agent: agent ? agent.name : t.agent,
+        ms: (t.ms / 1000).toFixed(2) + 's',
+        num: String(i + 1).padStart(2, '0'),
+        dot: state === 'idle' ? 'rgba(255,255,255,.18)' : state === 'active' ? '#6f97bf' : '#7fb79a',
+        anim: state === 'active' ? 'blip 1s ease-in-out infinite' : 'none',
+        fg: state === 'idle' ? 'rgba(230,232,235,.34)' : '#e6e8eb',
+        detailFg: state === 'idle' ? 'rgba(230,232,235,.2)' : 'rgba(230,232,235,.48)',
+        msFg: state === 'idle' ? 'transparent' : 'rgba(230,232,235,.34)',
+        line: state === 'idle' ? 'rgba(255,255,255,.07)' : 'rgba(111,151,191,.35)',
+      };
+    });
+
+    const payload = {
+      employeeProfile: { employeeId: EMPLOYEE.id, name: EMPLOYEE.name, department: EMPLOYEE.department, role: EMPLOYEE.role, level: EMPLOYEE.level, location: EMPLOYEE.location, manager: EMPLOYEE.manager, costCenter: EMPLOYEE.costCenter, startDate: EMPLOYEE.start },
+      recommendedEntitlements: included.map(e => ({ entitlementId: e.id, name: e.name, application: e.app, peerAffinity: e.pct + '% (' + e.count + ')', riskRating: e.risk, riskScore: e.score, policyRule: e.rule, recommendationStatus: e.status })),
+      optionalEntitlements: OPTIONAL.map(e => ({ entitlementId: e.id, name: e.name, application: e.app, peerAffinity: e.pct + '% (' + e.count + ')', riskRating: e.risk, riskScore: e.score, reason: e.reason })),
+      separationOfDutiesAnalysis: { result: SOD.result, entitlementsEvaluated: included.map(e => e.id), conflictsFound: false },
+      metadata: { readOnly: true, provisioningInstructions: 'Submit through the IAM access request workflow; this service does not provision.' },
+    };
+
+    return {
+      // shell
+      nav: [
+        this.navItem('queue', 'Queue', 'queue', String(QUEUE.length)),
+        this.navItem('report', 'Recommendation', 'report', EMPLOYEE.id),
+        this.navItem('chat', 'Console', 'chat', String(s.chat.length)),
+      ],
+      agents: AGENTS.map(a => {
+        const on = activeAgent === a.key;
+        return {
+          name: a.name, tools: a.tools,
+          rowBg: on ? 'rgba(111,151,191,.14)' : 'transparent',
+          dot: on ? '#6f97bf' : '#7fb79a',
+          anim: on ? 'blip .9s ease-in-out infinite' : 'none',
+          fg: on ? '#e6e8eb' : 'rgba(230,232,235,.6)',
+        };
+      }),
+      meshLabel: inFlight ? 'working' : '7/7 healthy',
+      crumb: titles[view].crumb,
+      title: titles[view].title,
+      empQuery: s.empQuery,
+      setQuery: e => this.setState({ empQuery: e.target.value }),
+      queryKey: e => { if (e.key === 'Enter') this.startRun('report'); },
+      runRecommendation: () => this.startRun('report'),
+      runLabel: inFlight ? 'Running…' : 'Run recommendation',
+      runIcon: inFlight ? ICONS.spin : ICONS.play,
+      runSpin: inFlight ? 'spin .9s linear infinite' : 'none',
+      runOpacity: inFlight ? '.7' : '1',
+
+      isQueue: view === 'queue',
+      isReport: view === 'report',
+      isChat: view === 'chat',
+
+      // queue
+      stats: [
+        { label: 'Awaiting run', value: '3', unit: 'joiners', note: 'Start dates within 21 days', color: '#8fb0d1', bar: '38%' },
+        { label: 'Recommended', value: '2', unit: 'sets', note: 'Ready for access request', color: '#7fb79a', bar: '25%' },
+        { label: 'SoD flags', value: '1', unit: 'open', note: 'NJ1007 · rule SOD-014', color: '#d18b8b', bar: '12%' },
+        { label: 'Median affinity', value: '82', unit: '%', note: 'Across last 30 recommendations', color: '#8fb0d1', bar: '82%' },
+      ],
+      queue: QUEUE.map(r => {
+        const t = TONES[r.tone];
+        return { ...r, stateFg: t.fg, stateBg: t.bg, stateBorder: t.bd, go: () => this.startRun('report') };
+      }),
+
+      // report
+      emp: EMPLOYEE,
+      empFields: [
+        { label: 'Manager', value: EMPLOYEE.manager },
+        { label: 'Level', value: EMPLOYEE.level },
+        { label: 'Location', value: EMPLOYEE.location },
+        { label: 'Cost center', value: EMPLOYEE.costCenter },
+        { label: 'Start date', value: EMPLOYEE.start },
+        { label: 'Peer group', value: EMPLOYEE.peerGroup },
+      ],
+      recommended: RECOMMENDED.map(e => this.entitlement(e, false)),
+      optional: OPTIONAL.map(e => this.entitlement(e, true)),
+      selectionLabel: included.length + ' of ' + RECOMMENDED.length + ' selected for handoff',
+      thresholdLabel: '60%',
+      sod: {
+        ...SOD,
+        scope: included.length + ' entitlements evaluated · 38 rules',
+        resultFg: SOD.result === 'PASS' ? '#7fb79a' : '#d18b8b',
+        rules: SOD.rules.map(r => {
+          const t = TONES[RISK_TONE[r.severity]];
+          return { ...r, fg: t.fg, bg: t.bg, bd: t.bd };
+        }),
+      },
+      metaInstructions: payload.metadata.provisioningInstructions,
+      jsonOpen: s.jsonOpen,
+      jsonLabel: s.jsonOpen ? 'Hide payload' : 'View JSON payload',
+      toggleJson: () => this.setState(v => ({ jsonOpen: !v.jsonOpen })),
+      jsonText: JSON.stringify(payload, null, 2),
+      noop: () => {},
+
+      // trace
+      traceRows,
+      traceStatus: inFlight ? 'streaming' : s.done ? 'complete' : 'idle',
+      traceStatusFg: inFlight ? '#6f97bf' : s.done ? '#7fb79a' : 'rgba(230,232,235,.4)',
+      traceMeta: inFlight ? 'control.stream.open · seq ' + (s.step + 1) * 7 : s.done ? 'control.stream.end · 7 nodes · 3.35s' : 'awaiting run',
+      rerun: () => this.startRun(view === 'chat' ? 'chat' : 'report'),
+
+      // chat
+      chatMessages: s.chat.map((m, i) => ({
+        ...m,
+        isUser: m.role === 'user',
+        align: m.role === 'user' ? 'flex-end' : 'flex-start',
+        bg: m.role === 'user' ? 'rgba(111,151,191,.14)' : 'rgba(255,255,255,.035)',
+        bd: m.role === 'user' ? 'rgba(111,151,191,.32)' : 'rgba(255,255,255,.09)',
+        who: m.role === 'user' ? 'You · access reviewer' : 'Supervisor',
+        cites: m.cites || [],
+      })),
+      chatBusy: s.chatBusy,
+      draft: s.draft,
+      setDraft: e => this.setState({ draft: e.target.value }),
+      draftKey: e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.ask(this.state.draft); } },
+      send: () => this.ask(this.state.draft),
+      suggestions: SUGGESTIONS.map(q => ({ text: q, go: () => this.ask(q) })),
+    };
+  }
+}
+
+</script>
+</body>
+</html>

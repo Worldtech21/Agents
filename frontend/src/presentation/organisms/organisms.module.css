@@ -1,0 +1,471 @@
+/* Organisms — the shell's persistent regions and the report's large blocks. */
+
+/* ------------------------------------------------------------- sidebar --- */
+
+.sidebar {
+  width: 252px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  padding: 24px 16px;
+  background: var(--parchment);
+  border-right: 1px solid var(--divider);
+  overflow-y: auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 8px;
+}
+
+.brandText {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.brandName {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: var(--track-17);
+}
+
+.brandTagline {
+  font-size: 12px;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+}
+
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.meshSection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.meshHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 0 11px;
+}
+
+.meshTitle {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+}
+
+.meshStatus {
+  margin-left: auto;
+  font-size: 12px;
+  letter-spacing: var(--track-12);
+}
+
+.meshList {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 6px;
+  border-radius: var(--radius-card);
+  background: var(--card);
+  border: 1px solid var(--hairline);
+}
+
+.sidebarFooter {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.notice {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 15px;
+  border-radius: var(--radius-card);
+  background: var(--card);
+  border: 1px solid var(--hairline);
+}
+
+.noticeTitle {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: var(--track-14);
+}
+
+.noticeBody {
+  font-size: 12px;
+  line-height: 1.45;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+}
+
+.healthLine {
+  font-size: 11px;
+  line-height: 1.5;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+  padding: 0 11px;
+  overflow-wrap: anywhere;
+}
+
+/* -------------------------------------------------------------- header --- */
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 18px 32px;
+  border-bottom: 1px solid var(--divider);
+  flex: none;
+}
+
+.headerTitles {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.crumb {
+  font-size: 12px;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+}
+
+.title {
+  font-size: 28px;
+  line-height: 1.14;
+  letter-spacing: -0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.headerActions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.searchField {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: var(--radius-pill);
+  background: var(--card);
+  border: 1px solid var(--hairline);
+}
+
+.searchInput {
+  width: 132px;
+  font-size: 17px;
+  letter-spacing: var(--track-17);
+  background: transparent;
+  border: none;
+  color: var(--ink);
+}
+
+.searchInput::placeholder {
+  color: var(--ink-48);
+}
+
+/* --------------------------------------------------------- trace panel --- */
+
+.tracePanel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--parchment);
+  border-left: 1px solid var(--divider);
+}
+
+.traceHead {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 20px 24px 14px;
+  flex: none;
+}
+
+.traceTitle {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: var(--track-17);
+}
+
+.traceStatus {
+  margin-left: auto;
+  font-size: 12px;
+  letter-spacing: var(--track-12);
+}
+
+.traceScroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 24px;
+}
+
+.traceFoot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--divider);
+  flex: none;
+}
+
+.traceMeta {
+  font-size: 12px;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.traceReplay {
+  margin-left: auto;
+  flex: none;
+}
+
+/* ------------------------------------------------------ profile header --- */
+
+.profileCard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  border-radius: var(--radius-card);
+  border: 1px solid var(--hairline);
+  background: var(--card);
+  overflow: hidden;
+  margin-bottom: 40px;
+}
+
+.profileIdentity {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--parchment);
+}
+
+.profileTop {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.avatar {
+  width: 56px;
+  height: 56px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-pill);
+  background: var(--tint);
+  color: var(--blue);
+  font-size: 21px;
+  font-weight: 600;
+}
+
+.profileNames {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.profileName {
+  font-size: clamp(24px, 2.6vw, 34px);
+  line-height: 1.1;
+  letter-spacing: -0.6px;
+}
+
+.profileSub {
+  font-size: 14px;
+  letter-spacing: var(--track-14);
+  color: var(--ink-48);
+}
+
+.profileHeadline {
+  font-size: 17px;
+  line-height: 1.47;
+  letter-spacing: var(--track-17);
+  color: var(--ink-80);
+}
+
+.profileFields {
+  padding: 28px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: 18px 24px;
+  align-content: start;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+}
+
+.fieldValue {
+  font-size: 14px;
+  letter-spacing: var(--track-14);
+  overflow-wrap: anywhere;
+}
+
+/* ------------------------------------------------------------ sod panel --- */
+
+.sodPanel {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(236px, 1fr));
+  border-radius: var(--radius-card);
+  border: 1px solid var(--hairline);
+  background: var(--card);
+  overflow: hidden;
+  margin-top: 40px;
+  scroll-margin-top: 24px;
+}
+
+.sodResult {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+  background: var(--parchment);
+}
+
+.sodResultValue {
+  font-family: var(--font-display);
+  font-size: 40px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -1px;
+}
+
+.sodBody {
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sodSummary {
+  font-size: 17px;
+  line-height: 1.47;
+  letter-spacing: var(--track-17);
+  color: var(--ink-80);
+  text-wrap: pretty;
+}
+
+.sodRule {
+  display: grid;
+  grid-template-columns: 98px 92px minmax(0, 1fr);
+  align-items: baseline;
+  gap: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--divider);
+}
+
+.sodRuleId {
+  font-size: 14px;
+  letter-spacing: var(--track-14);
+  color: var(--blue);
+  overflow-wrap: anywhere;
+}
+
+.sodRuleText {
+  font-size: 14px;
+  line-height: 1.43;
+  letter-spacing: var(--track-14);
+  color: var(--ink-48);
+  text-wrap: pretty;
+}
+
+.sodEmpty {
+  font-size: 14px;
+  letter-spacing: var(--track-14);
+  color: var(--ink-48);
+  padding-top: 14px;
+  border-top: 1px solid var(--divider);
+}
+
+/* -------------------------------------------------------------- handoff --- */
+
+.handoff {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-top: 40px;
+  padding: 24px 28px;
+  border-radius: var(--radius-card);
+  background: var(--parchment);
+}
+
+.handoffText {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.handoffTitle {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: var(--track-17);
+}
+
+.handoffBody {
+  font-size: 14px;
+  line-height: 1.43;
+  letter-spacing: var(--track-14);
+  color: var(--ink-48);
+  text-wrap: pretty;
+}
+
+.handoffActions {
+  margin-left: auto;
+  display: flex;
+  gap: 10px;
+  flex: none;
+}
+
+.payload {
+  margin: 16px 0 0;
+  padding: 24px;
+  max-height: 360px;
+  overflow: auto;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--hairline);
+  background: var(--card);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  letter-spacing: 0;
+  color: var(--ink-80);
+  animation: rise 0.22s ease;
+}

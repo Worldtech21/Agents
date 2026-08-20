@@ -1,0 +1,538 @@
+/* Molecules — composed pieces that appear in more than one screen. */
+
+/* ------------------------------------------------------------ stat card --- */
+
+.statCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 24px;
+  border-radius: var(--radius-card);
+  background: var(--card);
+  border: 1px solid var(--hairline);
+}
+
+.statLabel {
+  font-size: 14px;
+  letter-spacing: var(--track-14);
+  color: var(--ink-48);
+}
+
+.statValueRow {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.statValue {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 40px;
+  line-height: 1.1;
+  letter-spacing: -1px;
+}
+
+.statUnit,
+.statNote {
+  font-size: 14px;
+  letter-spacing: var(--track-14);
+  color: var(--ink-48);
+}
+
+.statNote {
+  line-height: 1.43;
+}
+
+/* -------------------------------------------------------------- nav item --- */
+
+.navItem {
+  display: grid;
+  grid-template-columns: 18px 1fr auto;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-size: 14px;
+  letter-spacing: var(--track-14);
+  padding: 9px 11px;
+  border: none;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--ink-80);
+  font-weight: 400;
+}
+
+.navItem:hover {
+  background: var(--row-hover);
+}
+
+.navItemActive {
+  background: var(--tint);
+  color: var(--blue);
+  font-weight: 600;
+}
+
+.navBadge {
+  font-size: 12px;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+}
+
+.navItemActive .navBadge {
+  color: var(--blue);
+}
+
+/* ------------------------------------------------------------ mesh row --- */
+
+.meshRow {
+  display: grid;
+  grid-template-columns: 12px 1fr auto;
+  align-items: center;
+  gap: 9px;
+  padding: 6px 9px;
+  border-radius: var(--radius-pill);
+  background: transparent;
+}
+
+.meshRowActive {
+  background: var(--tint);
+}
+
+.meshDot {
+  justify-self: center;
+}
+
+.meshName {
+  font-size: 13px;
+  letter-spacing: -0.2px;
+  color: var(--ink-80);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meshRowActive .meshName {
+  color: var(--blue);
+}
+
+.meshTools {
+  font-size: 11px;
+  color: var(--ink-48);
+}
+
+/* -------------------------------------------------------- entitlement --- */
+
+.entitlementCard {
+  display: grid;
+  grid-template-columns: 22px minmax(160px, 1.5fr) minmax(120px, 150px) minmax(92px, 110px) minmax(150px, 1.1fr);
+  align-items: center;
+  gap: 18px;
+  padding: 20px 22px;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--hairline);
+  background: var(--card);
+  transition: opacity 0.2s ease;
+}
+
+.entitlementExcluded {
+  opacity: 0.42;
+}
+
+.checkbox {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--hairline);
+  background: transparent;
+}
+
+.checkboxChecked {
+  border-color: var(--blue);
+  background: var(--blue);
+}
+
+.entitlementName {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: var(--track-17);
+}
+
+.entitlementMeta {
+  font-size: 14px;
+  letter-spacing: var(--track-14);
+  color: var(--ink-48);
+}
+
+.entitlementIdentity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.affinityBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.affinityHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.affinityValue {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.4px;
+}
+
+.affinityPeers {
+  font-size: 12px;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+}
+
+.riskBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.riskScore {
+  font-size: 12px;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+  padding-left: 14px;
+}
+
+.policyBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.policyStatus {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: var(--track-14);
+}
+
+.policyNote {
+  font-size: 12px;
+  line-height: 1.4;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+}
+
+.policyRule {
+  color: var(--blue);
+}
+
+/* ---------------------------------------------------- optional entitlement --- */
+
+.optionalRow {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.25fr) minmax(104px, 120px) minmax(92px, 116px) minmax(170px, 1.5fr);
+  align-items: center;
+  gap: 18px;
+  padding: 18px 22px;
+  border-radius: var(--radius-card);
+  background: var(--parchment);
+}
+
+.optionalAffinity {
+  font-size: 14px;
+  letter-spacing: var(--track-14);
+  color: var(--ink-80);
+}
+
+.optionalReason {
+  font-size: 14px;
+  line-height: 1.43;
+  letter-spacing: var(--track-14);
+  color: var(--ink-48);
+}
+
+/* ------------------------------------------------------------ queue row --- */
+
+.queueRow {
+  min-width: 1040px;
+  display: grid;
+  grid-template-columns: 96px minmax(150px, 1.2fr) minmax(190px, 1.6fr) 76px 128px 148px 92px;
+  gap: 16px;
+  align-items: center;
+  padding: 15px 24px;
+  border-bottom: 1px solid var(--divider);
+}
+
+.queueRow:hover {
+  background: var(--row-hover);
+}
+
+.queueRow:last-child {
+  border-bottom: none;
+}
+
+.queueId {
+  font-size: 14px;
+  letter-spacing: var(--track-14);
+  color: var(--blue);
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-align: left;
+}
+
+.queueId:hover {
+  text-decoration: underline;
+}
+
+.queueName {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: var(--track-17);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.queueRole {
+  font-size: 14px;
+  letter-spacing: var(--track-14);
+  color: var(--ink-80);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.queueStart {
+  font-size: 14px;
+  letter-spacing: var(--track-14);
+  color: var(--ink-48);
+}
+
+.queuePeers {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.queuePeerBar {
+  flex: 1;
+}
+
+.queuePeerCount {
+  font-size: 14px;
+  letter-spacing: var(--track-14);
+  color: var(--ink-48);
+}
+
+.queueActions {
+  display: flex;
+  gap: 6px;
+  justify-self: end;
+}
+
+/* ------------------------------------------------------------ trace row --- */
+
+.traceRow {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr);
+  gap: 14px;
+}
+
+.traceRail {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.traceDot {
+  margin-top: 6px;
+}
+
+.traceLine {
+  flex: 1;
+  width: 1.5px;
+  border-radius: var(--radius-pill);
+  opacity: 0.35;
+}
+
+.traceBody {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 22px;
+  min-width: 0;
+}
+
+.traceHeader {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.traceLabel {
+  font-size: 14px;
+  letter-spacing: var(--track-14);
+  color: var(--ink);
+}
+
+.traceLabelActive {
+  font-weight: 600;
+}
+
+.traceLabelIdle {
+  color: var(--ink-48);
+}
+
+.traceMs {
+  margin-left: auto;
+  font-size: 12px;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+}
+
+.traceAgent {
+  font-size: 12px;
+  letter-spacing: var(--track-12);
+  color: var(--blue);
+}
+
+.traceDetail {
+  font-size: 12px;
+  line-height: 1.45;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+  overflow-wrap: anywhere;
+}
+
+/* ----------------------------------------------------------- chat bubble --- */
+
+.chatTurn {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  max-width: 82%;
+}
+
+.chatTurnUser {
+  align-self: flex-end;
+}
+
+.chatTurnAssistant {
+  align-self: flex-start;
+}
+
+.chatWho {
+  font-size: 12px;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+}
+
+.chatBubble {
+  padding: 16px 20px;
+  border-radius: var(--radius-card);
+  font-size: 17px;
+  line-height: 1.47;
+  letter-spacing: var(--track-17);
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+
+.chatBubbleUser {
+  background: var(--tint);
+}
+
+.chatBubbleAssistant {
+  background: var(--parchment);
+}
+
+.chatCites {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* -------------------------------------------------------------- states --- */
+
+.state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+  padding: 48px 32px;
+  border-radius: var(--radius-card);
+  border: 1px solid var(--hairline);
+  background: var(--card);
+}
+
+.stateInline {
+  padding: 28px 24px;
+}
+
+.stateIcon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-pill);
+  background: var(--tint);
+  color: var(--blue);
+  margin-bottom: 4px;
+}
+
+.stateIconWarn {
+  background: color-mix(in srgb, var(--red) 12%, transparent);
+  color: var(--red);
+}
+
+.stateTitle {
+  font-size: 21px;
+  line-height: 1.19;
+  letter-spacing: -0.3px;
+}
+
+.stateBody {
+  max-width: 46ch;
+  font-size: 14px;
+  line-height: 1.43;
+  letter-spacing: var(--track-14);
+  color: var(--ink-48);
+  text-wrap: pretty;
+}
+
+.stateActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.stateDetail {
+  max-width: 100%;
+  margin-top: 8px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: var(--parchment);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  letter-spacing: 0;
+  color: var(--ink-48);
+  text-align: left;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}

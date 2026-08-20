@@ -1,0 +1,93 @@
+ACCESS ADVISOR — RUNBOOK
+========================
+Two processes: FastAPI backend (port 8000) + Vite frontend (port 5173).
+Run them in two separate terminals.
+
+
+TERMINAL 1 — BACKEND
+--------------------
+cd /home/yuvraj-anand/Agents
+uv run uvicorn app.main:app --port 8000 --reload
+
+Wait ~20s for MCP servers to connect. Verify:
+  curl -s localhost:8000/api/v1/health | head -c 200
+Expect: {"status":"ok", ... "graph_ready":true ...}
+
+If graph_ready is false, check .env (LLM key + MCP URLs).
+API docs: http://localhost:8000/docs
+
+
+TERMINAL 2 — FRONTEND
+---------------------
+cd /home/yuvraj-anand/Agents/frontend
+npm install          # first time only
+cp .env.example .env # first time only; defaults proxy to 127.0.0.1:8000
+npm run dev
+
+Open: http://localhost:5173
+
+
+HOW TO TEST THE UI
+------------------
+1. Sidebar "Agent mesh" should list Supervisor + 6 workers with green dots
+   and tool counts. Green = that worker's MCP server is connected.
+   Bottom line shows provider, model, and "6/6 MCP connected".
+
+2. Toggle "Dark appearance" / "Light appearance" at the bottom left.
+   Preference persists across reloads.
+
+3. QUEUE tab (starts empty — this is correct, see note below):
+   - Type NJ1004 into "Add employee ID", press "Add to queue"
+   - Press "Run" on the row
+
+4. Type NJ1004 in the top-right "Employee ID" field, click
+   "Run recommendation". This is the main path.
+   - App switches to the Recommendation tab
+   - Right panel streams the agent trace live, step by step
+   - Sidebar highlights whichever worker is currently working
+   - Button becomes "Cancel run" while streaming
+   - TAKES 5-10 MINUTES (six agents, real LLM calls). Be patient.
+   - When done: profile card, recommended entitlements with peer-affinity
+     bars, optional entitlements, SoD panel, provisioning handoff
+   - Click "View JSON payload"; untick an entitlement and watch the
+     payload update
+   - "Open access request" is intentionally disabled (read-only service)
+
+5. CONSOLE tab: ask a question, e.g.
+   "What is ENT005 and who owns it?"
+   Citation chips under the answer show which tools actually ran.
+
+6. Error/empty states worth checking:
+   - Stop the backend (Ctrl+C in terminal 1), reload the page
+     -> "The Access Advisor service is not reachable" with Try again
+   - Run an unknown id such as NJ9999
+     -> supervisor refusal rendered as an answer, not an error
+
+
+OTHER COMMANDS
+--------------
+cd /home/yuvraj-anand/Agents/frontend
+
+npx tsc --noEmit     # typecheck
+npm run build        # production build -> dist/
+npm run preview      # serve the production build
+
+
+NOTES
+-----
+* The queue starts EMPTY on purpose. The backend has no endpoint that
+  lists new joiners, so the queue is a local watchlist of ids you have
+  asked about, persisted in the browser. Every column except the id is
+  read back out of a real completed run.
+
+* A recommendation run takes minutes and costs tokens. Results are cached
+  per employee id for the session, so revisiting a report is instant.
+  "Replay" in the trace panel re-runs it.
+
+* Backend port other than 8000? Edit frontend/.env:
+    VITE_DEV_PROXY_TARGET=http://127.0.0.1:<port>
+  then restart the frontend dev server.
+
+* Ports already in use:
+    lsof -ti:8000 | xargs -r kill
+    lsof -ti:5173 | xargs -r kill

@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(echo \"tsc exit: $?\")",
+      "Bash(npx vite *)",
+      "Bash(timeout 90 .venv/bin/python -m uvicorn app.main:app --port 8010)",
+      "Bash(curl -s -m 10 http://127.0.0.1:8010/api/v1/health)",
+      "Bash(curl -s -m 10 http://127.0.0.1:8010/api/v1/agents)",
+      "Bash(timeout 180 curl -sN -X POST http://127.0.0.1:8010/api/v1/chat/stream -H 'Content-Type: application/json' -d '{\"message\":\"Recommend entitlements for employee NJ1004.\",\"thread_id\":\"probe-1\",\"stream_modes\":[\"updates\",\"messages\",\"custom\"]}')",
+      "Bash(echo \"exit=$?\")",
+      "Bash(python3 -c ' *)",
+      "Bash(nohup .venv/bin/python -m uvicorn app.main:app --port 8010)",
+      "Bash(curl -s -m 10 http://127.0.0.1:8010/api/v1/agents -o /tmp/claude-1000/-home-yuvraj-anand-Agents/8c346527-defb-40f4-b268-3d8aca548fc6/scratchpad/agents.json)",
+      "Bash(timeout 900 curl -sN -X POST http://127.0.0.1:8010/api/v1/chat/stream -H 'Content-Type: application/json' -d '{\"message\":\"Recommend entitlements for employee NJ1004.\",\"thread_id\":\"probe-full\",\"stream_modes\":[\"updates\",\"custom\"]}')",
+      "Bash(echo \"curl exit=$?\")"
+    ]
+  }
+}

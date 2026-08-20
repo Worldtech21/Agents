@@ -57,10 +57,12 @@ class FakeModelProvider:
 
     def __init__(self, reply: str = "Done.") -> None:
         self.reply = reply
-        self.calls: list[str | None] = []
+        self.calls: list[tuple[str | None, str | None]] = []
 
-    def get_model(self, *, model: str | None = None, **overrides: Any) -> FakeChatModel:
-        self.calls.append(model)
+    def get_model(
+        self, *, model: str | None = None, provider: str | None = None, **overrides: Any
+    ) -> FakeChatModel:
+        self.calls.append((provider, model))
         return FakeChatModel(reply=self.reply)
 
 

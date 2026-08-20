@@ -33,7 +33,12 @@ class SupervisorFactory:
 
     def build(self, agents: list[Any], specs: tuple[AgentSpec, ...]) -> Any:
         """Return an *uncompiled* ``StateGraph`` wiring the supervisor to *agents*."""
-        model = self._model_provider.get_model(model=self._settings.supervisor_model)
+        # The supervisor can run on a different vendor than the workers — routing
+        # is a light task, so a cheaper/faster provider often suffices.
+        model = self._model_provider.get_model(
+            model=self._settings.supervisor_model,
+            provider=self._settings.supervisor_provider,
+        )
 
         graph = create_supervisor(
             agents,
@@ -56,7 +61,9 @@ class SupervisorFactory:
             include_agent_name="inline",
         )
         logger.info(
-            "Built supervisor over %d agent(s): %s",
+            "Built supervisor on %s/%s over %d agent(s): %s",
+            self._settings.supervisor_provider,
+            self._settings.supervisor_model,
             len(agents),
             ", ".join(spec.name for spec in specs),
         )

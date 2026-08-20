@@ -53,4 +53,5 @@ class AgentService:
             mcp_servers=spec.mcp_servers,
             tools=(),
             model=spec.model or self._settings.llm_model,
+            provider=spec.provider or self._settings.llm_provider,
         )

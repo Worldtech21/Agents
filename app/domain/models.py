@@ -79,6 +79,9 @@ class AgentSpec:
     mcp_servers: tuple[str, ...] = ()
     #: Optional model override; falls back to the configured default.
     model: str | None = None
+    #: Optional provider override — e.g. run one worker on a local Ollama model
+    #: while the rest use the configured default.
+    provider: str | None = None
 
     @property
     def handoff_description(self) -> str:
@@ -96,6 +99,7 @@ class AgentInfo:
     mcp_servers: tuple[str, ...]
     tools: tuple[str, ...]
     model: str
+    provider: str
 
 
 @dataclass(slots=True, frozen=True)

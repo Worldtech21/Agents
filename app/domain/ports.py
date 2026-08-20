@@ -16,8 +16,14 @@ from app.domain.models import AgentSpec, MCPServerStatus
 class ChatModelProvider(Protocol):
     """Supplies configured chat models to the agent layer."""
 
-    def get_model(self, *, model: str | None = None, **overrides: Any) -> Any:
-        """Return a LangChain ``BaseChatModel`` ready to bind tools to."""
+    def get_model(
+        self, *, model: str | None = None, provider: str | None = None, **overrides: Any
+    ) -> Any:
+        """Return a LangChain ``BaseChatModel`` ready to bind tools to.
+
+        ``provider`` selects a registered vendor adapter; when omitted the
+        configured default (``LLM_PROVIDER``) is used.
+        """
         ...
 
 

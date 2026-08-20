@@ -56,8 +56,14 @@ app/
 │   └── ports.py                ChatModelProvider, ToolProvider, AgentBuilder, CheckpointerFactory
 │
 ├── infrastructure/             Adapters implementing the ports
+<<<<<<< Updated upstream
 │   ├── llm/factory.py               Multi-provider model construction + caching
 │   ├── llm/providers.py             One adapter per vendor (Gemini is the default)
+=======
+│   ├── llm/base.py                  ProviderAdapter contract + registry
+│   ├── llm/providers.py             One adapter per vendor (lazy imports)
+│   ├── llm/factory.py               LLMFactory — provider selection + caching
+>>>>>>> Stashed changes
 │   ├── mcp/client.py                MultiServerMCPClient wrapper, graceful degradation
 │   ├── checkpoint/factory.py        Thread persistence
 │   └── streaming/
@@ -203,8 +209,9 @@ The factory, supervisor, graph builder and API need no changes — the roster is
 
 ---
 
-## Model configuration
+## Choosing an LLM provider
 
+<<<<<<< Updated upstream
 Defaults target **Google Gemini 3.7 Flash** through `langchain-google-genai`:
 
 | Setting | Default | Notes |
@@ -236,6 +243,98 @@ Registered names: `google_genai`, `anthropic`, `openai`, `openai_compatible`, `a
 `bedrock`, `ollama`, `groq`, `mistral`. Each adapter declares which parameters its vendor actually
 honours, so unsupported ones are dropped rather than silently ignored by the SDK.
 `LLM_SUPERVISOR_PROVIDER` can route the supervisor at a different vendor than the workers.
+=======
+The provider is configuration, not code. `LLMFactory` resolves `LLM_PROVIDER` against a registry
+of adapters and hands back a LangChain chat model; nothing else in the app learns which vendor
+answered.
+
+```bash
+LLM_PROVIDER=openai
+LLM_MODEL=gpt-4o
+OPENAI_API_KEY=sk-…
+```
+
+| `LLM_PROVIDER` | Package (extra) | Credential |
+|---|---|---|
+| `anthropic` *(default)* | `langchain-anthropic` *(core)* | `ANTHROPIC_API_KEY` |
+| `openai` | `.[openai]` | `OPENAI_API_KEY` |
+| `openai_compatible` | `.[openai_compatible]` | none — set `LLM_BASE_URL` |
+| `azure_openai` | `.[azure_openai]` | `AZURE_OPENAI_API_KEY` + endpoint/deployment |
+| `google_genai` | `.[google_genai]` | `GOOGLE_API_KEY` |
+| `bedrock` | `.[bedrock]` | AWS credential chain + `AWS_REGION` |
+| `ollama` | `.[ollama]` | none — set `LLM_BASE_URL` |
+| `groq` | `.[groq]` | `GROQ_API_KEY` |
+| `mistral` | `.[mistral]` | `MISTRAL_API_KEY` |
+
+Only `anthropic` ships by default. `GET /api/v1/agents/providers` lists every adapter with its
+install status, and selecting an uninstalled one fails at startup with the exact `pip install`
+command rather than an `ImportError`.
+
+### Mixing providers in one graph
+
+Three levels of granularity, each optional:
+
+```bash
+LLM_PROVIDER=openai                    # workers
+LLM_SUPERVISOR_PROVIDER=anthropic      # routing only
+LLM_SUPERVISOR_MODEL=claude-opus-5
+```
+
+```python
+# app/agents/specs.py — pin one worker to a local model
+KNOWLEDGE_AGENT = AgentSpec(..., provider="ollama", model="llama3.1")
+```
+
+### Capabilities, not guesswork
+
+Each adapter declares which parameters its vendor honours, because LangChain chat models
+**accept unknown kwargs silently** — they warn and drop the value. Two consequences this handles:
+
+- **Claude Opus 5 / Sonnet 5 reject `temperature` and `top_p` with a 400**, so the Anthropic
+  adapter never sends them even if `LLM_TEMPERATURE` is set. Steer those models through the
+  prompts in `app/agents/prompts.py`.
+- **Ollama's output cap is `num_predict`,** not `max_tokens` — passing `max_tokens` there is
+  accepted and silently ignored, so the adapter translates it.
+
+`LLM_THINKING` / `LLM_EFFORT` are Anthropic-shaped and are simply not sent to other vendors.
+`LLM_EXTRA_PARAMS` (JSON) is the escape hatch for anything vendor-specific.
+
+### Adding a provider
+
+Subclass `ProviderAdapter` in `app/infrastructure/llm/providers.py`, declare its package,
+capabilities and kwarg spelling, and `register()` it. The factory, container, agents and API need
+no changes.
+
+```python
+class MyVendorAdapter(ProviderAdapter):
+    name = "myvendor"
+    package = "langchain-myvendor"
+    import_path = "langchain_myvendor"
+    class_name = "ChatMyVendor"
+    env_key = "MYVENDOR_API_KEY"
+    default_model = "mv-large"
+    capabilities = ProviderCapabilities(stream_usage=True)
+
+    def build_kwargs(self, request): return self.common_kwargs(request)
+
+register(MyVendorAdapter())
+```
+
+### Anthropic defaults
+
+When `LLM_PROVIDER=anthropic`, defaults follow current Claude guidance:
+
+| Setting | Default | Notes |
+|---|---|---|
+| `LLM_MODEL` | `claude-opus-5` | |
+| `LLM_EFFORT` | `high` | `low`…`max`; `xhigh` suits the hardest agentic runs |
+| `LLM_THINKING` | `adaptive` | The model decides how much to think per request |
+| `LLM_THINKING_DISPLAY` | `summarized` | Surfaces reasoning in the stream; `omitted` reads as a long pause |
+| `LLM_MAX_TOKENS` | `64000` | Caps thinking **+** response text together |
+
+`LLM_THINKING=disabled` is only valid at effort `high` or lower on Opus 5; pairing it with
+`xhigh`/`max` returns a 400.
+>>>>>>> Stashed changes
 
 ---
 

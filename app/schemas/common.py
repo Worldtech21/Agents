@@ -40,6 +40,7 @@ class AgentInfoDTO(BaseModel):
     title: str
     description: str
     model: str
+    provider: str
     mcp_servers: list[str] = Field(default_factory=list)
     tools: list[str] = Field(default_factory=list)
 
@@ -50,9 +51,34 @@ class AgentInfoDTO(BaseModel):
             title=info.title,
             description=info.description,
             model=info.model,
+            provider=info.provider,
             mcp_servers=list(info.mcp_servers),
             tools=list(info.tools),
         )
+
+
+class LLMProviderInfoDTO(BaseModel):
+    """One registered provider adapter."""
+
+    name: str
+    package: str
+    installed: bool
+    default_model: str
+    requires_api_key: bool
+    env_key: str | None = None
+    active: bool = False
+
+
+class LLMProviderDTO(BaseModel):
+    """Which vendor is serving models, and whether its package is importable."""
+
+    provider: str
+    package: str
+    installed: bool
+    model: str
+    supervisor_provider: str
+    supervisor_model: str
+    available_providers: list[str] = Field(default_factory=list)
 
 
 class HealthDTO(BaseModel):
@@ -62,6 +88,7 @@ class HealthDTO(BaseModel):
     graph_ready: bool
     model: str
     supervisor_model: str
+    llm: LLMProviderDTO | None = None
     agents: list[str] = Field(default_factory=list)
     mcp_servers: list[MCPServerStatusDTO] = Field(default_factory=list)
     stream_modes: list[str] = Field(default_factory=list)

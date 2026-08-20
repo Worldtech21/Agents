@@ -38,7 +38,8 @@ class ReactAgentFactory:
         """Resolve the spec's tools and compile its ReAct agent."""
         tools = await self._tool_provider.get_tools(spec.mcp_servers)
         model_name = spec.model or self._settings.llm_model
-        model = self._model_provider.get_model(model=model_name)
+        provider_name = spec.provider or self._settings.llm_provider
+        model = self._model_provider.get_model(model=model_name, provider=provider_name)
 
         agent = create_react_agent(
             model=model,
@@ -59,10 +60,13 @@ class ReactAgentFactory:
             mcp_servers=spec.mcp_servers,
             tools=tuple(tool.name for tool in tools),
             model=model_name,
+            provider=provider_name,
         )
         logger.info(
-            "Built agent '%s' with %d MCP tool(s) from %s",
+            "Built agent '%s' on %s/%s with %d MCP tool(s) from %s",
             spec.name,
+            provider_name,
+            model_name,
             len(tools),
             ", ".join(spec.mcp_servers) or "no servers",
         )

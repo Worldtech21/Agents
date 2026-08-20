@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Path
 
-from app.api.deps import AgentServiceDep
-from app.schemas.common import AgentInfoDTO, MCPServerStatusDTO
+from app.api.deps import AgentServiceDep, ContainerDep
+from app.infrastructure.llm.base import available_providers, get_adapter
+from app.infrastructure.llm.factory import LLMFactory
+from app.schemas.common import AgentInfoDTO, LLMProviderInfoDTO, MCPServerStatusDTO
 
 router = APIRouter(prefix="/agents", tags=["agents"])
 
@@ -22,6 +24,33 @@ async def mcp_status(service: AgentServiceDep) -> list[MCPServerStatusDTO]:
     return [MCPServerStatusDTO.from_domain(status) for status in service.mcp_status()]
 
 
+@router.get(
+    "/providers",
+    response_model=list[LLMProviderInfoDTO],
+    summary="LLM providers and whether their packages are installed",
+)
+async def providers(container: ContainerDep) -> list[LLMProviderInfoDTO]:
+    """Every registered provider, so you can see what `LLM_PROVIDER` accepts.
+
+    `installed` reflects whether the vendor package can actually be imported —
+    providers ship as optional extras.
+    """
+    active = container.settings.llm_provider
+    return [
+        LLMProviderInfoDTO(
+            name=adapter.name,
+            package=adapter.package,
+            installed=LLMFactory.is_installed(adapter),
+            default_model=adapter.default_model,
+            requires_api_key=adapter.capabilities.requires_api_key,
+            env_key=adapter.env_key,
+            active=adapter.name == active,
+        )
+        for adapter in (get_adapter(name) for name in available_providers())
+    ]
+
+
+# Declared after /mcp and /providers so those literal paths win over the wildcard.
 @router.get("/{name}", response_model=AgentInfoDTO, summary="Describe one agent")
 async def get_agent(
     service: AgentServiceDep,

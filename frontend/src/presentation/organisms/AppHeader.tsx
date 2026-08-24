@@ -4,6 +4,10 @@
  * The run button is the single entry point to a supervisor run; while one is in
  * flight it becomes the cancel affordance, because an abandoned six-worker run
  * costs real tokens.
+ *
+ * `showRunControl` is false in employee mode: analysing a named joiner is HR's
+ * job, and an employee has no business typing somebody else's id. The
+ * breadcrumb and title stay, so the header still says where you are.
  */
 
 import { type FormEvent } from 'react';
@@ -22,6 +26,8 @@ export interface AppHeaderProps {
   readonly onCancel: () => void;
   readonly isRunning: boolean;
   readonly disabled: boolean;
+  /** False in employee mode, where there is nothing to run. */
+  readonly showRunControl?: boolean;
 }
 
 export function AppHeader({
@@ -33,6 +39,7 @@ export function AppHeader({
   onCancel,
   isRunning,
   disabled,
+  showRunControl = true,
 }: AppHeaderProps) {
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -46,6 +53,7 @@ export function AppHeader({
         <h3 className={styles.title}>{title}</h3>
       </div>
 
+      {!showRunControl ? null : (
       <form className={styles.headerActions} onSubmit={submit} role="search">
         <div className={styles.searchField}>
           <Icon name="search" size={15} stroke="var(--ink-48)" />
@@ -72,6 +80,7 @@ export function AppHeader({
           </Button>
         )}
       </form>
+      )}
     </header>
   );
 }

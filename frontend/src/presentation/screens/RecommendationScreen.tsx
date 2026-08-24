@@ -42,6 +42,11 @@ export interface RecommendationScreenProps {
   readonly trace: TracePanelVM;
   readonly onRun: (employeeId: string) => void;
   readonly onGoToQueue: () => void;
+  /** Raises one request per ticked entitlement. */
+  readonly onSubmitRequests: (entitlementIds: readonly string[]) => void;
+  readonly isSubmitting: boolean;
+  /** What came back last time, or null before anything was submitted. */
+  readonly submitSummary: string | null;
 }
 
 export function RecommendationScreen({
@@ -52,6 +57,9 @@ export function RecommendationScreen({
   trace,
   onRun,
   onGoToQueue,
+  onSubmitRequests,
+  isSubmitting,
+  submitSummary,
 }: RecommendationScreenProps) {
   const [excluded, setExcluded] = useState<ReadonlySet<string>>(new Set());
   const [isPayloadOpen, setPayloadOpen] = useState(false);
@@ -101,6 +109,9 @@ export function RecommendationScreen({
           onToggleEntitlement={toggle}
           onRun={onRun}
           onGoToQueue={onGoToQueue}
+          onSubmitRequests={() => onSubmitRequests([...selectedIds])}
+          isSubmitting={isSubmitting}
+          submitSummary={submitSummary}
         />
       </div>
 
@@ -127,6 +138,9 @@ interface ReportBodyProps {
   readonly isPayloadOpen: boolean;
   readonly onTogglePayload: () => void;
   readonly onToggleEntitlement: (entitlementId: string) => void;
+  readonly onSubmitRequests: () => void;
+  readonly isSubmitting: boolean;
+  readonly submitSummary: string | null;
   readonly onRun: (employeeId: string) => void;
   readonly onGoToQueue: () => void;
 }
@@ -144,6 +158,9 @@ function ReportBody({
   onToggleEntitlement,
   onRun,
   onGoToQueue,
+  onSubmitRequests,
+  isSubmitting,
+  submitSummary,
 }: ReportBodyProps) {
   if (isRunning && outcome === undefined) return <RecommendationSkeleton />;
 
@@ -288,6 +305,10 @@ function ReportBody({
         isPayloadOpen={isPayloadOpen}
         onTogglePayload={onTogglePayload}
         selectionLabel={`Payload reflects ${selectedCount} of ${view.recommended.length} recommended entitlements · thread ${view.threadId}`}
+        onOpenAccessRequest={onSubmitRequests}
+        canSubmit={selectedCount > 0}
+        isSubmitting={isSubmitting}
+        submitSummary={submitSummary}
       />
     </>
   );

@@ -33,23 +33,35 @@ def test_real_urls_are_not_placeholders(url):
 
 def test_unconfigured_servers_are_omitted_so_the_app_still_boots():
     settings = Settings(
-        mcp_research_url="<https://your-research-mcp-server.example.com/mcp>",
-        mcp_knowledge_url="https://mcp.acme.com/knowledge",
-        mcp_automation_url=None,
+        _env_file=None,
+        mcp_new_joiners_url="<https://your-new-joiners-mcp-server.example.com/mcp>",
+        mcp_policy_url="https://mcp.acme.com/policy",
+        mcp_identities_url=None,
     )
     servers = settings.mcp_server_settings()
-    assert set(servers) == {"knowledge"}
-    assert servers["knowledge"]["url"] == "https://mcp.acme.com/knowledge"
-    assert servers["knowledge"]["transport"] == "streamable_http"
+    assert set(servers) == {"policy_mcp"}
+    assert servers["policy_mcp"]["url"] == "https://mcp.acme.com/policy"
+    assert servers["policy_mcp"]["transport"] == "streamable_http"
+
+
+def test_the_request_tracker_is_configured_like_any_other_server():
+    """It is driven by services rather than agents, but configured the same way."""
+    settings = Settings(
+        _env_file=None, mcp_requests_url="https://mcp.acme.com/requests-mcp/mcp"
+    )
+    servers = settings.mcp_server_settings()
+    assert set(servers) == {"requests_mcp"}
+    assert servers["requests_mcp"]["url"] == "https://mcp.acme.com/requests-mcp/mcp"
 
 
 def test_headers_accept_a_json_string_from_env():
     settings = Settings(
-        mcp_research_url="https://mcp.acme.com/research",
-        mcp_research_headers='{"Authorization": "Bearer abc"}',
+        _env_file=None,
+        mcp_new_joiners_url="https://mcp.acme.com/new-joiners",
+        mcp_new_joiners_headers='{"Authorization": "Bearer abc"}',
     )
     servers = settings.mcp_server_settings()
-    assert servers["research"]["headers"] == {"Authorization": "Bearer abc"}
+    assert servers["new_joiners_mcp"]["headers"] == {"Authorization": "Bearer abc"}
 
 
 def test_extra_servers_merge_in_from_json():
@@ -62,7 +74,9 @@ def test_extra_servers_merge_in_from_json():
 
 
 def test_extra_servers_with_placeholder_urls_are_skipped():
-    settings = Settings(mcp_extra_servers='{"x": {"url": "<fill-me-in>"}}')
+    settings = Settings(
+        _env_file=None, mcp_extra_servers='{"x": {"url": "<fill-me-in>"}}'
+    )
     assert settings.mcp_server_settings() == {}
 
 
@@ -95,4 +109,4 @@ def test_supervisor_model_falls_back_to_the_default_model():
 
 def test_invalid_json_in_an_mcp_setting_is_rejected_loudly():
     with pytest.raises(Exception, match="valid JSON"):
-        Settings(mcp_research_headers="{not json")
+        Settings(_env_file=None, mcp_new_joiners_headers="{not json")

@@ -536,3 +536,207 @@
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
+
+/* ------------------------------------------------------------ requests --- */
+
+.requestRow {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 20px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  background: var(--card);
+}
+
+.requestHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.requestTitle {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.requestName {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  letter-spacing: 0;
+  color: var(--ink);
+}
+
+.requestApp,
+.requestSubject {
+  font-size: 13px;
+  letter-spacing: var(--track-13);
+  color: var(--ink-48);
+}
+
+.requestMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 12px;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+}
+
+.requestPolicy {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  letter-spacing: var(--track-13);
+  color: var(--ink-80);
+  text-wrap: pretty;
+}
+
+.requestChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.requestQuote {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-48);
+  font-style: italic;
+}
+
+/* The approver's reason. Set apart because it is the one thing a refused
+   requester has come to read. */
+.requestDecision {
+  display: flex;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--parchment);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-80);
+}
+
+.requestDecisionLabel {
+  flex: none;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-48);
+  padding-top: 2px;
+}
+
+.requestActions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding-top: 4px;
+  border-top: 1px solid var(--divider);
+  margin-top: 2px;
+  padding-top: 12px;
+}
+
+.requestNote {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-pill);
+  background: var(--canvas);
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.requestNote:focus-visible {
+  outline: 2px solid var(--blue-focus);
+  outline-offset: 1px;
+}
+
+/* -------------------------------------------------------------- verdict --- */
+
+/* Border colour is set inline from the verdict's tone: green when it can be
+   granted now, amber when it needs a manager, red when it cannot be routed. */
+.verdictCard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 10px 0 6px 0;
+  padding: 18px 20px;
+  border: 1px solid var(--hairline);
+  border-left-width: 3px;
+  border-radius: var(--radius-card);
+  background: var(--card);
+  animation: rise 0.22s ease;
+}
+
+.verdictHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.verdictHead > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.verdictName {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  letter-spacing: 0;
+  color: var(--ink);
+}
+
+.verdictApp {
+  font-size: 12px;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+}
+
+.verdictRisk {
+  flex: none;
+  font-size: 12px;
+  letter-spacing: var(--track-12);
+}
+
+.verdictSummary {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: var(--track-14);
+  text-wrap: pretty;
+}
+
+.verdictPolicy {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+  text-wrap: pretty;
+}
+
+.verdictChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.verdictActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 4px;
+}

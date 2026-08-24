@@ -10,18 +10,23 @@ on:
    API down.  Set ``MCP_REQUIRED=true`` to make failures fatal instead.
 3. **Per-server grouping.**  Each agent asks for the servers named in its spec
    and gets exactly those tools.
+4. **Self-healing.**  A server that failed is retried on the next call once
+   ``MCP_RETRY_AFTER_SECONDS`` has passed, so a server that comes back up is
+   picked up without restarting the API.
 """
 
 from __future__ import annotations
 
 import asyncio
+import json
+import time
 from typing import Any
 
 from langchain_core.tools import BaseTool
 from langchain_mcp_adapters.client import MultiServerMCPClient
 
 from app.core.config import Settings
-from app.core.exceptions import MCPConnectionError
+from app.core.exceptions import MCPConnectionError, MCPToolError
 from app.core.logging import get_logger
 from app.domain.models import MCPServerSpec, MCPServerStatus
 
@@ -50,6 +55,11 @@ class MCPToolProvider:
         self._client: MultiServerMCPClient | None = None
         self._tools: dict[str, list[BaseTool]] = {}
         self._errors: dict[str, str] = {}
+        #: Monotonic timestamp of the last failed load, per server. Without it a
+        #: retry would fire on every call — and since each one waits up to
+        #: ``mcp_connect_timeout_seconds``, a polled endpoint would stall on a
+        #: server that is simply down instead of failing fast off the error.
+        self._failed_at: dict[str, float] = {}
         self._lock = asyncio.Lock()
         self._started = False
 
@@ -96,6 +106,7 @@ class MCPToolProvider:
             message = _describe(exc)
             self._errors[name] = message
             self._tools[name] = []
+            self._failed_at[name] = time.monotonic()
             logger.warning(
                 "MCP server '%s' unavailable — its agent will run without those tools (%s)",
                 name,
@@ -107,6 +118,7 @@ class MCPToolProvider:
 
         self._tools[name] = list(tools)
         self._errors.pop(name, None)
+        self._failed_at.pop(name, None)
         logger.info(
             "Connected to MCP server '%s' (%d tools: %s)",
             name,
@@ -114,10 +126,37 @@ class MCPToolProvider:
             ", ".join(t.name for t in tools) or "none",
         )
 
+    async def _retry_if_due(self, name: str) -> None:
+        """Reconnect to a previously failed *name*, at most once per cooldown.
+
+        A server that was down at startup would otherwise stay written off for
+        the life of the process: ``_load_server`` only ever runs from
+        ``startup``, which is guarded by ``_started``. Bringing the server back
+        would then need an API restart, which is a poor answer to an upstream
+        that fixed itself.
+        """
+        failed_at = self._failed_at.get(name)
+        if failed_at is None:
+            return
+        if time.monotonic() - failed_at < self._settings.mcp_retry_after_seconds:
+            return
+
+        async with self._lock:
+            # Another caller may have reconnected while we waited for the lock.
+            if self._failed_at.get(name) != failed_at or self._client is None:
+                return
+            logger.info("Retrying MCP server '%s' after an earlier failure.", name)
+            try:
+                await self._load_server(name)
+            except Exception:  # noqa: BLE001 - _load_server already recorded it
+                pass
+
     async def shutdown(self) -> None:
         async with self._lock:
             self._client = None
             self._tools.clear()
+            self._errors.clear()
+            self._failed_at.clear()
             self._started = False
 
     # ------------------------------------------------------------------ queries
@@ -134,12 +173,64 @@ class MCPToolProvider:
                     "Agent references MCP server '%s', which is not configured.", name
                 )
                 continue
+            await self._retry_if_due(name)
             for tool in self._tools.get(name, []):
                 if tool.name in seen:
                     continue
                 seen.add(tool.name)
                 collected.append(tool)
         return collected
+
+    async def call_tool(self, server: str, tool: str, arguments: dict[str, Any]) -> Any:
+        """Invoke one tool on *server* directly and return its decoded result.
+
+        This is the workflow layer's door into MCP.  Agents get tools handed to a
+        model, which then chooses among them; the approval and provisioning
+        services call through here instead, so granting access is an ordinary
+        function call rather than something a model decided to do.
+
+        Arguments whose value is ``None`` are dropped: the upstream APIs treat a
+        field as "leave unchanged" only when it is absent, and as "set to null"
+        when it is present.
+        """
+        if not self._started:
+            await self.startup()
+
+        if server not in self._specs:
+            raise MCPConnectionError(
+                f"MCP server '{server}' is not configured.",
+                details={"server": server, "tool": tool},
+            )
+        await self._retry_if_due(server)
+        if error := self._errors.get(server):
+            raise MCPConnectionError(
+                f"MCP server '{server}' is not connected.",
+                details={"server": server, "tool": tool, "error": error},
+            )
+
+        found = next((t for t in self._tools.get(server, []) if t.name == tool), None)
+        if found is None:
+            raise MCPToolError(
+                f"MCP server '{server}' exposes no tool named '{tool}'.",
+                details={
+                    "server": server,
+                    "tool": tool,
+                    "available": [t.name for t in self._tools.get(server, [])],
+                },
+            )
+
+        payload = {k: v for k, v in arguments.items() if v is not None}
+        try:
+            result = await found.ainvoke(payload)
+        except Exception as exc:  # noqa: BLE001 - surfaced as a typed app error
+            message = _describe(exc)
+            logger.warning("MCP tool %s.%s failed: %s", server, tool, message)
+            raise MCPToolError(
+                f"{server}.{tool} failed: {message}",
+                details={"server": server, "tool": tool, "arguments": payload},
+            ) from exc
+
+        return _decode(result)
 
     def status(self) -> list[MCPServerStatus]:
         statuses: list[MCPServerStatus] = []
@@ -159,6 +250,26 @@ class MCPToolProvider:
     @property
     def configured_servers(self) -> tuple[str, ...]:
         return tuple(self._specs)
+
+
+def _decode(result: Any) -> Any:
+    """Turn an MCP tool result into Python data.
+
+    ``ainvoke`` hands back whatever the adapter made of the content blocks: a
+    JSON string for these servers, occasionally a one-element list of blocks.
+    Anything that does not parse as JSON is returned as-is — a tool is entitled
+    to answer with plain text.
+    """
+    if isinstance(result, list) and len(result) == 1:
+        result = result[0]
+    if isinstance(result, dict) and "text" in result:
+        result = result["text"]
+    if isinstance(result, str):
+        try:
+            return json.loads(result)
+        except json.JSONDecodeError:
+            return result
+    return result
 
 
 def _describe(exc: BaseException, _depth: int = 0) -> str:
@@ -188,6 +299,14 @@ class NullToolProvider:
 
     async def get_tools(self, server_names: tuple[str, ...]) -> list[Any]:  # noqa: D102
         return []
+
+    async def call_tool(  # noqa: D102
+        self, server: str, tool: str, arguments: dict[str, Any]
+    ) -> Any:
+        raise MCPConnectionError(
+            "No MCP servers are configured.",
+            details={"server": server, "tool": tool},
+        )
 
     def status(self) -> list[MCPServerStatus]:  # noqa: D102
         return []

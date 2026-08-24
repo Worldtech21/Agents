@@ -1,6 +1,26 @@
-Help me with the Agentic workflow for the IAM (Identity and Access Management) Automation or assistance on recommending the appropriate entitlements, where it should have both options i.e. it can run autonomously when new user needs to be onboarded or user can chat for self assistance.
+I want 2 modes of website - 
+- HR 
+- Employee
 
-Lets first built autonomus part with the following requirements:
-1. Supervisor Agent will receive the employee id from the system or when it is called.
-2. Planner Agent will create the plan to solve and get the appropriate recommendation on the entitlements.
-3. Peer Analysis Agent will use the connected Peer Affinity MCP to get the list of the tools for fetching details of entitlements basis the peer analysis done by the using the employee id.
+Most of current setup is for HR, but for employe we need a self service mechanism + approval mechanism only.
+The employee can raise requests for himself there. He will have a conversational bot who he can talk to, for requests. 
+
+Employee Mode
+After analysis if the entitlement needs no approval, the access will be provided then and there. 
+Else if it needs approval, the bot will ask the employee if he wants to send the request to his manager.
+The employee setup will also have a request approval section(because this employee might be some other employee's manager), where employee can see approvals - he may approve or reject.
+If the manager approves, the access is granted, otherwise the message of refusal is sent to employee.
+
+HR Mode 
+After analysis, if entitlements need no approval, then the entitlement is granted then and there.
+Else if approval needed, the request is sent to manager of new joiner directly.
+If the manager approves, the access is granted, otherwise the message of refusal is sent to HR.
+
+
+Since this is a prototype, we do not need login. we will instead have employee mode for only 2 employees, with who we can show that the features are functional.
+
+The New joiners table will have their Manager ID changes to some employees ID. I can do that directly.
+Then gke will have to be updated with image.
+
+kubectl get pods -n kalchemy
+ kubectl apply -f .

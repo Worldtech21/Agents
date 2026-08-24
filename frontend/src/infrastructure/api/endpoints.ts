@@ -10,11 +10,19 @@ import { httpClient } from '@infrastructure/api/client';
 import { readStreamEnvelopes } from '@infrastructure/api/sse';
 import { apiUrl, env } from '@infrastructure/config/env';
 import type {
+  AccessRequestDTO,
   AgentInfoDTO,
+  AnalyzeRequestDTO,
+  AnalyzeResponseDTO,
+  CatalogEntryDTO,
   ChatRequestDTO,
   ChatResponseDTO,
+  DecisionDTO,
   HealthDTO,
   MCPServerStatusDTO,
+  PersonaDTO,
+  RaiseRequestDTO,
+  RequestFilters,
   StreamCapabilitiesDTO,
   StreamEnvelopeDTO,
   ThreadStateDTO,
@@ -121,4 +129,112 @@ export function streamChatEvents(
   signal?: AbortSignal,
 ): AsyncGenerator<StreamEnvelopeDTO, void, undefined> {
   return readStreamEnvelopes({ url: apiUrl('/chat/events'), body: payload, signal });
+}
+
+/* ------------------------------------------------------------ workflow --- */
+/*
+ * The access request surface. These are plain JSON calls answered in
+ * milliseconds — the verdict behind them is computed from policy data in
+ * Python, not by a supervisor run — so none of them needs the extended
+ * timeout `postChat` sets.
+ */
+
+/** `GET /personas` — the actors this prototype can be used as. */
+export async function fetchPersonas(signal?: AbortSignal): Promise<PersonaDTO[]> {
+  const response = await httpClient.get<PersonaDTO[]>('/personas', { signal });
+  return response.data;
+}
+
+/** `GET /catalog/entitlements` — the catalog with risk and approval verdicts. */
+export async function fetchCatalog(signal?: AbortSignal): Promise<CatalogEntryDTO[]> {
+  const response = await httpClient.get<CatalogEntryDTO[]>('/catalog/entitlements', { signal });
+  return response.data;
+}
+
+/**
+ * `POST /requests/analyze` — the deterministic verdict. Writes nothing.
+ *
+ * This is what a confirmation card renders, rather than the assistant's own
+ * account of the rules.
+ */
+export async function postAnalyze(
+  payload: AnalyzeRequestDTO,
+  signal?: AbortSignal,
+): Promise<AnalyzeResponseDTO> {
+  const response = await httpClient.post<AnalyzeResponseDTO>('/requests/analyze', payload, {
+    signal,
+  });
+  return response.data;
+}
+
+/**
+ * `POST /requests` — raise one request per entitlement named.
+ *
+ * Returns one record per entitlement: those needing no approval come back
+ * already granted, the rest addressed to the subject's manager.
+ */
+export async function postRequests(
+  payload: RaiseRequestDTO,
+  signal?: AbortSignal,
+): Promise<AccessRequestDTO[]> {
+  const response = await httpClient.post<AccessRequestDTO[]>('/requests', payload, { signal });
+  return response.data;
+}
+
+/**
+ * `GET /requests` — one listing serving two jobs.
+ *
+ * Filtered by `approver_id` it is a manager's inbox; filtered by
+ * `requester_id` it is that person's own history, which is where an approval
+ * or a refusal is read back.
+ */
+export async function fetchRequests(
+  filters: RequestFilters = {},
+  signal?: AbortSignal,
+): Promise<AccessRequestDTO[]> {
+  const response = await httpClient.get<AccessRequestDTO[]>('/requests', {
+    signal,
+    params: filters,
+  });
+  return response.data;
+}
+
+/** `GET /requests/{id}`. */
+export async function fetchRequest(
+  requestId: string,
+  signal?: AbortSignal,
+): Promise<AccessRequestDTO> {
+  const response = await httpClient.get<AccessRequestDTO>(
+    `/requests/${encodeURIComponent(requestId)}`,
+    { signal },
+  );
+  return response.data;
+}
+
+/** `POST /requests/{id}/approve` — approve, then provision. 403 if not the approver. */
+export async function approveRequest(
+  requestId: string,
+  payload: DecisionDTO,
+  signal?: AbortSignal,
+): Promise<AccessRequestDTO> {
+  const response = await httpClient.post<AccessRequestDTO>(
+    `/requests/${encodeURIComponent(requestId)}/approve`,
+    payload,
+    { signal },
+  );
+  return response.data;
+}
+
+/** `POST /requests/{id}/reject` — `note` is the refusal the requester reads. */
+export async function rejectRequest(
+  requestId: string,
+  payload: DecisionDTO,
+  signal?: AbortSignal,
+): Promise<AccessRequestDTO> {
+  const response = await httpClient.post<AccessRequestDTO>(
+    `/requests/${encodeURIComponent(requestId)}/reject`,
+    payload,
+    { signal },
+  );
+  return response.data;
 }

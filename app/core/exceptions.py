@@ -39,9 +39,41 @@ class MCPConnectionError(AppError):
     code = "mcp_connection_error"
 
 
+class MCPToolError(AppError):
+    """A directly-invoked MCP tool refused or failed.
+
+    Distinct from :class:`MCPConnectionError`: the server answered, the call did
+    not succeed.  ``details['tool']`` names it.
+    """
+
+    status_code = 502
+    code = "mcp_tool_error"
+
+
 class AgentNotFoundError(AppError):
     status_code = 404
     code = "agent_not_found"
+
+
+class RecordNotFoundError(AppError):
+    """A record the workflow needs does not exist upstream."""
+
+    status_code = 404
+    code = "record_not_found"
+
+
+class WorkflowError(AppError):
+    """The request is well-formed but the workflow cannot honour it."""
+
+    status_code = 409
+    code = "workflow_error"
+
+
+class NotApproverError(AppError):
+    """Someone other than the named approver tried to decide a request."""
+
+    status_code = 403
+    code = "not_approver"
 
 
 class GraphNotReadyError(AppError):

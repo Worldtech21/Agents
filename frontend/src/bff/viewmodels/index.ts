@@ -9,8 +9,29 @@
 /** The design's four semantic colours plus a neutral, from Access Advisor.dc.html. */
 export type Tone = 'blue' | 'green' | 'amber' | 'red' | 'neutral';
 
-/** Which screen is showing. Mirrors the `view` state in the design. */
-export type ViewKey = 'queue' | 'report' | 'chat';
+/** Which persona is acting. There is no login; this is the whole of identity. */
+export type ActorMode = 'hr' | 'employee';
+
+/**
+ * Which screen is showing.
+ *
+ * The union spans both modes; which subset is reachable is decided by the
+ * acting persona, in `VIEWS_BY_MODE` below.
+ */
+export type ViewKey =
+  | 'queue'
+  | 'report'
+  | 'chat'
+  | 'hrRequests'
+  | 'assistant'
+  | 'approvals'
+  | 'myRequests';
+
+/** The views each mode may reach, in nav order. The first is that mode's home. */
+export const VIEWS_BY_MODE: Record<ActorMode, readonly ViewKey[]> = {
+  hr: ['queue', 'report', 'hrRequests', 'chat'],
+  employee: ['assistant', 'approvals', 'myRequests'],
+};
 
 /* ------------------------------------------------------------ app shell --- */
 
@@ -18,8 +39,13 @@ export interface NavItemVM {
   readonly key: ViewKey;
   readonly label: string;
   readonly badge: string;
-  readonly icon: 'queue' | 'report' | 'chat';
+  readonly icon: IconKey;
+  /** Draws attention to a non-zero inbox without the badge carrying colour. */
+  readonly tone?: Tone;
 }
+
+/** The icon names the shell uses. A subset of `IconName` in presentation/atoms. */
+export type IconKey = 'queue' | 'report' | 'chat' | 'inbox' | 'history' | 'user';
 
 export interface AgentMeshItemVM {
   readonly key: string;
@@ -212,4 +238,91 @@ export interface QueueStatVM {
   readonly unit: string;
   readonly note: string;
   readonly tone: Tone;
+}
+
+/* -------------------------------------------------------------- personas --- */
+
+export interface PersonaVM {
+  readonly actorId: string;
+  readonly name: string;
+  /** "SN" — the switcher's avatar, since there are no photographs. */
+  readonly initials: string;
+  readonly mode: ActorMode;
+  /** "Employee · Finance" or "HR operations". */
+  readonly roleLabel: string;
+  /** Empty when nobody is on record. */
+  readonly managerId: string;
+  readonly pendingApprovals: number;
+  readonly pendingLabel: string;
+}
+
+/* -------------------------------------------------------------- requests --- */
+
+/** One access request, formatted for a list row. */
+export interface AccessRequestVM {
+  readonly requestId: string;
+  readonly entitlementName: string;
+  readonly application: string;
+  readonly statusLabel: string;
+  readonly statusTone: Tone;
+  /** True while the request is still waiting on somebody. */
+  readonly isPending: boolean;
+  /** True once nothing further can happen to it. */
+  readonly isSettled: boolean;
+  readonly riskLabel: string;
+  readonly riskTone: Tone;
+  readonly policyBasis: string;
+  readonly sodConflicts: readonly string[];
+  /** "for Anjali Rao (NJ1004)" — empty when the subject is the viewer. */
+  readonly subjectLabel: string;
+  readonly requesterLabel: string;
+  readonly approverLabel: string;
+  readonly justification: string;
+  /** The approver's reason. This is how a refusal reaches the requester. */
+  readonly decisionNote: string;
+  readonly timestampLabel: string;
+}
+
+/** The deterministic verdict, as the confirmation card renders it. */
+export interface VerdictVM {
+  readonly subjectId: string;
+  readonly entitlementId: string;
+  readonly entitlementName: string;
+  readonly application: string;
+  readonly riskLabel: string;
+  readonly riskTone: Tone;
+  readonly approvalRequired: boolean;
+  readonly policyBasis: string;
+  readonly sodConflicts: readonly string[];
+  readonly alreadyHeld: boolean;
+  readonly approverId: string;
+  /** Approval is needed but nobody is on record — the request cannot be routed. */
+  readonly approverMissing: boolean;
+  /** "Request access" | "Send to Ramesh" | "You already hold this". */
+  readonly actionLabel: string;
+  /** True when there is nothing to submit. */
+  readonly actionDisabled: boolean;
+  /** One line explaining the verdict in the employee's terms. */
+  readonly summary: string;
+  readonly summaryTone: Tone;
+}
+
+/** What the assistant proposed, before the backend has been asked. */
+export interface RequestIntentVM {
+  readonly entitlementId: string | null;
+  readonly entitlementName: string | null;
+  readonly justification: string;
+  readonly readyToSubmit: boolean;
+}
+
+/* ---------------------------------------------------------------- catalog --- */
+
+export interface CatalogEntryVM {
+  readonly entitlementId: string;
+  readonly entitlementName: string;
+  readonly application: string;
+  readonly riskLabel: string;
+  readonly riskTone: Tone;
+  readonly approvalRequired: boolean;
+  readonly approvalLabel: string;
 }

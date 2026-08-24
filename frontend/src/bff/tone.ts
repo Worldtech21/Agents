@@ -54,3 +54,27 @@ export function toneForAffinity(percent: number | null): Tone {
   if (percent >= 60) return 'blue';
   return 'amber';
 }
+
+/**
+ * Request status -> tone.
+ *
+ * Green means the access exists. Amber means somebody still has to act. Red
+ * means it will not happen — either refused, or a grant that failed. The two
+ * red cases are deliberately not distinguished by colour: both need attention.
+ */
+export function toneForRequestStatus(status: string | null | undefined): Tone {
+  switch ((status ?? '').trim().toUpperCase()) {
+    case 'AUTO_GRANTED':
+    case 'GRANTED':
+    case 'APPROVED':
+      return 'green';
+    case 'PENDING_APPROVAL':
+    case 'BLOCKED_NO_APPROVER':
+      return 'amber';
+    case 'REJECTED':
+    case 'PROVISIONING_FAILED':
+      return 'red';
+    default:
+      return 'neutral';
+  }
+}

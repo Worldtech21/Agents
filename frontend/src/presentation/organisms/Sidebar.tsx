@@ -1,6 +1,6 @@
 /**
- * The persistent left rail: brand, navigation, agent mesh, read-only notice,
- * appearance toggle.
+ * The persistent left rail: brand, persona, navigation, agent mesh, governance
+ * notice, appearance toggle.
  *
  * The mesh is live — dot colour reflects whether each worker's MCP servers are
  * connected right now, and the row highlights while that worker is producing
@@ -8,17 +8,28 @@
  */
 
 import { TONE_VARIABLE } from '@bff/tone';
-import type { MeshSummaryVM, NavItemVM, ServiceHealthVM, ViewKey } from '@bff/viewmodels';
+import type {
+  MeshSummaryVM,
+  NavItemVM,
+  PersonaVM,
+  ServiceHealthVM,
+  ViewKey,
+} from '@bff/viewmodels';
 import { Button } from '@presentation/atoms/Button';
 import { Icon } from '@presentation/atoms/Icon';
 import { AgentMeshRow, AgentMeshRowSkeleton } from '@presentation/molecules/AgentMeshRow';
 import { NavItem } from '@presentation/molecules/NavItem';
+import { PersonaSwitcher } from '@presentation/organisms/PersonaSwitcher';
 import styles from '@presentation/organisms/organisms.module.css';
 
 export interface SidebarProps {
   readonly navItems: readonly NavItemVM[];
   readonly activeView: ViewKey;
   readonly onNavigate: (view: ViewKey) => void;
+  readonly personas: readonly PersonaVM[];
+  readonly actor: PersonaVM | null;
+  readonly personasLoading: boolean;
+  readonly onSelectPersona: (actorId: string) => void;
   readonly mesh: MeshSummaryVM;
   readonly meshLoading: boolean;
   readonly activeAgentKey: string | null;
@@ -31,6 +42,10 @@ export function Sidebar({
   navItems,
   activeView,
   onNavigate,
+  personas,
+  actor,
+  personasLoading,
+  onSelectPersona,
   mesh,
   meshLoading,
   activeAgentKey,
@@ -47,6 +62,13 @@ export function Sidebar({
           <span className={styles.brandTagline}>Entitlement recommendations</span>
         </div>
       </div>
+
+      <PersonaSwitcher
+        personas={personas}
+        actor={actor}
+        isLoading={personasLoading}
+        onSelect={onSelectPersona}
+      />
 
       <nav className={styles.nav} aria-label="Primary">
         {navItems.map((item) => (
@@ -86,11 +108,13 @@ export function Sidebar({
       </div>
 
       <div className={styles.sidebarFooter}>
+        {/* This said "read-only service" until access requests were wired up.
+            The claim has to track what the app actually does. */}
         <div className={styles.notice}>
-          <span className={styles.noticeTitle}>Read-only service</span>
+          <span className={styles.noticeTitle}>How decisions are made</span>
           <p className={styles.noticeBody}>
-            Nothing here grants, revokes or approves access. Recommendations hand off to the IAM
-            request workflow.
+            The agents only ever read. Whether access needs approval is decided from policy, and
+            granting happens only after you confirm — or after a manager approves.
           </p>
         </div>
         <Button variant="quiet" size="sm" onClick={onToggleTheme}>

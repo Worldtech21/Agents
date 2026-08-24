@@ -275,3 +275,13 @@
   color: var(--ink-48);
   text-align: center;
 }
+
+/* ------------------------------------------------------------ requests --- */
+
+.requests {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px 32px 32px;
+  overflow-y: auto;
+}

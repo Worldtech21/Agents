@@ -1,9 +1,11 @@
 /**
  * The handoff strip and the JSON payload panel.
  *
- * "Open access request" deliberately does nothing here: the service is
- * read-only end to end, and wiring this button to anything that writes would
- * contradict the guarantee the sidebar makes.
+ * "Open access request" used to be permanently disabled, because the service
+ * could not write. It can now: pressing it raises one request per ticked
+ * entitlement. Each is judged on its own — low-risk ones are granted in the
+ * same call, the rest go to the joiner's manager — so the result is a summary
+ * rather than a single yes or no.
  */
 
 import { Button } from '@presentation/atoms/Button';
@@ -15,6 +17,11 @@ export interface ProvisioningHandoffProps {
   readonly isPayloadOpen: boolean;
   readonly onTogglePayload: () => void;
   readonly selectionLabel: string;
+  readonly onOpenAccessRequest: () => void;
+  readonly canSubmit: boolean;
+  readonly isSubmitting: boolean;
+  /** What happened last time, or null before anything has been submitted. */
+  readonly submitSummary: string | null;
 }
 
 export function ProvisioningHandoff({
@@ -23,6 +30,10 @@ export function ProvisioningHandoff({
   isPayloadOpen,
   onTogglePayload,
   selectionLabel,
+  onOpenAccessRequest,
+  canSubmit,
+  isSubmitting,
+  submitSummary,
 }: ProvisioningHandoffProps) {
   return (
     <>
@@ -44,13 +55,25 @@ export function ProvisioningHandoff({
           <Button
             variant="primary"
             size="md"
-            disabled
-            title="This service is read-only; raise the request in the IAM workflow."
+            busy={isSubmitting}
+            disabled={!canSubmit || isSubmitting}
+            onClick={onOpenAccessRequest}
+            title={
+              canSubmit
+                ? 'Raise one request per ticked entitlement.'
+                : 'Tick at least one entitlement first.'
+            }
           >
             Open access request
           </Button>
         </div>
       </section>
+
+      {submitSummary ? (
+        <p className={styles.handoffResult} role="status">
+          {submitSummary}
+        </p>
+      ) : null}
 
       {isPayloadOpen ? (
         <>

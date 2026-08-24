@@ -93,5 +93,46 @@ export interface RawSupervisorError {
   };
 }
 
-/** Either shape, before the BFF has decided which one arrived. */
-export type RawSupervisorReply = RawRecommendationPayload | RawSupervisorError;
+/* ----------------------------------------------------- employee mode --- */
+
+/**
+ * What the assistant proposes — a *proposal*, never a decision.
+ *
+ * The supervisor emits this after working out which entitlement the employee
+ * means. It carries the model's own reading of the rules, which the UI
+ * deliberately does not render: `POST /requests/analyze` is asked the same
+ * question and its answer is what the confirmation card shows. Where the two
+ * disagree, the backend is right.
+ */
+export interface RawRequestIntent {
+  readonly subjectId: string | null;
+  readonly entitlementId: string | null;
+  readonly entitlementName: string | null;
+  readonly justification: string | null;
+  readonly approvalRequired: boolean | null;
+  readonly policyBasis: string | null;
+  readonly riskScore: number | null;
+  readonly sodConflicts: readonly string[] | null;
+  /** True only once the entitlement is unambiguous and a reason was captured. */
+  readonly readyToSubmit: boolean | null;
+}
+
+/**
+ * The employee-mode reply shape.
+ *
+ * Distinguished from the recommendation by the literal `mode` key, so the HR
+ * narrowing in bff/parse/supervisorPayload.ts is unaffected.
+ */
+export interface RawEmployeeReply {
+  readonly mode: 'employee';
+  /** Prose written for the employee to read directly. */
+  readonly reply: string;
+  /** Null while the assistant is still clarifying. */
+  readonly requestIntent: RawRequestIntent | null;
+}
+
+/** Any shape, before the BFF has decided which one arrived. */
+export type RawSupervisorReply =
+  | RawRecommendationPayload
+  | RawSupervisorError
+  | RawEmployeeReply;

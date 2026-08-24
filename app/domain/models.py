@@ -133,6 +133,196 @@ class RunRequest:
         }
 
 
+# --------------------------------------------------------------------- workflow
+# Everything below serves the two modes: HR onboarding a joiner, and an employee
+# requesting access for themselves.  None of it is decided by a model.
+
+
+class SubjectType(StrEnum):
+    """Which dataset the person the access is *for* lives in."""
+
+    #: An `EMP###` row in the identities data.
+    IDENTITY = "IDENTITY"
+    #: An `NJ####` row in the new joiners data — no identity record yet.
+    NEW_JOINER = "NEW_JOINER"
+
+
+class RequesterType(StrEnum):
+    """Which mode raised the request."""
+
+    EMPLOYEE = "EMPLOYEE"
+    HR = "HR"
+
+
+class RequestStatus(StrEnum):
+    """Where a request has got to.
+
+    ``APPROVED`` and ``GRANTED`` are separate on purpose: a manager saying yes
+    and the access actually landing are two events, and a failure between them
+    must stay visible rather than being reported as success.
+    """
+
+    AUTO_GRANTED = "AUTO_GRANTED"
+    PENDING_APPROVAL = "PENDING_APPROVAL"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    GRANTED = "GRANTED"
+    BLOCKED_NO_APPROVER = "BLOCKED_NO_APPROVER"
+    PROVISIONING_FAILED = "PROVISIONING_FAILED"
+
+
+@dataclass(slots=True, frozen=True)
+class Subject:
+    """The person an access request is about."""
+
+    employee_id: str
+    subject_type: SubjectType
+    name: str
+    department: str
+    job_role: str
+    job_level: str
+    location: str
+    #: Empty when nobody is on record — an approval-needing request then has
+    #: nowhere to go, which the caller is told rather than left to guess.
+    manager_id: str = ""
+    #: Entitlements already held. Empty for a joiner with no identity record.
+    entitlements: tuple[str, ...] = ()
+
+
+@dataclass(slots=True, frozen=True)
+class SodConflict:
+    """One separation-of-duties rule the subject would breach."""
+
+    sod_id: str
+    conflicting_entitlement: str
+    severity: str
+
+    def render(self) -> str:
+        """The `SOD002:AUDIT_TOOL` form stored on a request record."""
+        return f"{self.sod_id}:{self.conflicting_entitlement}"
+
+
+@dataclass(slots=True, frozen=True)
+class DecisionVerdict:
+    """Whether one entitlement may be granted to one subject, and on what basis.
+
+    Produced by ``DecisionService`` from policy data alone — no model is
+    consulted, and the same inputs always give the same verdict.
+    """
+
+    subject_id: str
+    entitlement_id: str
+    entitlement_name: str
+    application: str
+    risk_score: int | None
+    risk_category: str
+    approval_required: bool
+    policy_basis: str
+    sod_conflicts: tuple[SodConflict, ...] = ()
+    already_held: bool = False
+
+    @property
+    def rendered_conflicts(self) -> str:
+        return ";".join(c.render() for c in self.sod_conflicts)
+
+
+@dataclass(slots=True, frozen=True)
+class GrantResult:
+    """What happened when the provisioning service tried to hand out access."""
+
+    granted: bool
+    already_held: bool
+    identity_created: bool
+    entitlements: tuple[str, ...]
+    #: Set when provisioning is switched off — the workflow still advances, but
+    #: nothing was written and the caller must not claim otherwise.
+    skipped_reason: str = ""
+
+
+@dataclass(slots=True, frozen=True)
+class AccessRequest:
+    """One row of the request tracker."""
+
+    request_id: str
+    requester_id: str
+    requester_type: RequesterType
+    subject_id: str
+    subject_type: SubjectType
+    entitlement_id: str
+    entitlement_name: str
+    application: str
+    status: RequestStatus
+    approval_required: bool
+    policy_basis: str
+    approver_id: str = ""
+    risk_score: int | None = None
+    risk_category: str = ""
+    sod_conflicts: str = ""
+    justification: str = ""
+    decision_note: str = ""
+    created_at: str = ""
+    decided_at: str = ""
+    granted_at: str = ""
+
+    @classmethod
+    def from_record(cls, record: dict[str, Any]) -> AccessRequest:
+        """Build from a requests-MCP row, tolerating unknown or missing fields."""
+        return cls(
+            request_id=str(record.get("request_id", "")),
+            requester_id=str(record.get("requester_id", "")),
+            requester_type=_coerce_enum(
+                RequesterType, record.get("requester_type"), RequesterType.EMPLOYEE
+            ),
+            subject_id=str(record.get("subject_id", "")),
+            subject_type=_coerce_enum(
+                SubjectType, record.get("subject_type"), SubjectType.IDENTITY
+            ),
+            entitlement_id=str(record.get("entitlement_id", "")),
+            entitlement_name=str(record.get("entitlement_name", "")),
+            application=str(record.get("application", "")),
+            status=_coerce_enum(
+                RequestStatus, record.get("status"), RequestStatus.PENDING_APPROVAL
+            ),
+            approval_required=bool(record.get("approval_required", False)),
+            policy_basis=str(record.get("policy_basis", "")),
+            approver_id=str(record.get("approver_id") or ""),
+            risk_score=record.get("risk_score"),
+            risk_category=str(record.get("risk_category") or ""),
+            sod_conflicts=str(record.get("sod_conflicts") or ""),
+            justification=str(record.get("justification") or ""),
+            decision_note=str(record.get("decision_note") or ""),
+            created_at=str(record.get("created_at") or ""),
+            decided_at=str(record.get("decided_at") or ""),
+            granted_at=str(record.get("granted_at") or ""),
+        )
+
+
+@dataclass(slots=True, frozen=True)
+class Persona:
+    """An actor the client may act as. Stands in for the login we do not have."""
+
+    actor_id: str
+    name: str
+    mode: Literal["hr", "employee"]
+    department: str = ""
+    job_role: str = ""
+    manager_id: str = ""
+    #: How many requests are waiting on this persona's decision right now.
+    pending_approvals: int = 0
+
+
+def _coerce_enum(enum_cls: Any, value: Any, fallback: Any) -> Any:
+    """Map an upstream string onto an enum, falling back rather than raising.
+
+    The request tracker is a separate service; a value we do not recognise is a
+    reason to keep serving, not to fail the whole listing.
+    """
+    try:
+        return enum_cls(str(value).upper())
+    except (ValueError, AttributeError):
+        return fallback
+
+
 @dataclass(slots=True, frozen=True)
 class StreamEnvelope:
     """Uniform wrapper around every chunk emitted to a client.

@@ -21,7 +21,11 @@ export type IconName =
   | 'plus'
   | 'close'
   | 'replay'
-  | 'alert';
+  | 'alert'
+  | 'user'
+  | 'inbox'
+  | 'history'
+  | 'checkCircle';
 
 const PATHS: Record<IconName, readonly string[]> = {
   queue: ['M4 7h16M4 12h16M4 17h10'],
@@ -40,6 +44,10 @@ const PATHS: Record<IconName, readonly string[]> = {
   close: ['M6 6l12 12M18 6 6 18'],
   replay: ['M20 12a8 8 0 1 1-2.6-5.9', 'M20 4v5h-5'],
   alert: ['M12 8v5', 'M12 16.5v.01', 'M10.3 3.9 2.6 17.3A1.6 1.6 0 0 0 4 19.8h16a1.6 1.6 0 0 0 1.4-2.5L13.7 3.9a1.6 1.6 0 0 0-2.8 0Z'],
+  user: ['M16 8a4 4 0 1 1-8 0 4 4 0 0 1 8 0', 'M4 20a8 8 0 0 1 16 0'],
+  inbox: ['M3 13h5l1.5 3h5L16 13h5', 'M5.5 5h13l2.5 8v6H3v-6L5.5 5Z'],
+  history: ['M12 7v5l3.5 2', 'M20 12a8 8 0 1 1-2.6-5.9', 'M20 4v5h-5'],
+  checkCircle: ['M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0', 'm8.5 12 2.5 2.5 4.5-5'],
 };
 
 export interface IconProps {

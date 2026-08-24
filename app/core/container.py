@@ -24,6 +24,11 @@ from app.infrastructure.llm.factory import LLMFactory
 from app.infrastructure.mcp.client import MCPToolProvider
 from app.services.agent_service import AgentService
 from app.services.chat_service import ChatService
+from app.services.decision_service import DecisionService
+from app.services.directory_service import DirectoryService
+from app.services.persona_service import PersonaService
+from app.services.provisioning_service import ProvisioningService
+from app.services.request_service import RequestService
 
 logger = get_logger(__name__)
 
@@ -70,6 +75,32 @@ class ApplicationContainer:
             specs=self.specs,
         )
 
+        # The workflow services depend on MCP alone, never on the graph, so they
+        # are built here rather than in `startup`.  That is deliberate: if the
+        # LLM is misconfigured and the graph fails to compile, approving and
+        # granting access still work.
+        self.directory_service = DirectoryService(tools=self.tool_provider)
+        self.decision_service = DecisionService(
+            settings=settings, tools=self.tool_provider
+        )
+        self.provisioning_service = ProvisioningService(
+            settings=settings,
+            tools=self.tool_provider,
+            directory=self.directory_service,
+        )
+        self.request_service = RequestService(
+            settings=settings,
+            tools=self.tool_provider,
+            directory=self.directory_service,
+            decisions=self.decision_service,
+            provisioning=self.provisioning_service,
+        )
+        self.persona_service = PersonaService(
+            settings=settings,
+            directory=self.directory_service,
+            requests=self.request_service,
+        )
+
         self._graph: Any | None = None
         self._agent_info: dict[str, AgentInfo] = {}
         self._runner: GraphRunner | None = None
@@ -90,7 +121,11 @@ class ApplicationContainer:
             return
 
         self._runner = GraphRunner(settings=self.settings, graph=self._graph)
-        self._chat_service = ChatService(settings=self.settings, runner=self._runner)
+        self._chat_service = ChatService(
+            settings=self.settings,
+            runner=self._runner,
+            directory=self.directory_service,
+        )
         self._agent_service = AgentService(
             settings=self.settings,
             specs=self.specs,

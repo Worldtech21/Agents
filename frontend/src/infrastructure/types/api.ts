@@ -6,7 +6,7 @@
  * produced by `bff/`, so a backend rename never reaches a component.
  *
  * Source of truth: app/schemas/common.py, app/schemas/chat.py,
- * app/domain/models.py.
+ * app/schemas/requests.py, app/domain/models.py.
  */
 
 import type { StreamModeName } from '@infrastructure/config/env';
@@ -196,4 +196,159 @@ export interface GraphMessagesPayload {
 export interface ControlErrorPayload {
   readonly code: string;
   readonly message: string;
+}
+
+/* ------------------------------------------------------------ workflow --- */
+/*
+ * The access request surface (app/schemas/requests.py). Unlike the chat
+ * endpoints these are ordinary fast JSON calls — the verdict behind them is
+ * computed in Python from policy data, with no model in the loop.
+ */
+
+/** app/schemas/requests.py: PersonaDTO — the actor list standing in for a login. */
+export interface PersonaDTO {
+  readonly actor_id: string;
+  readonly name: string;
+  /** `hr` | `employee`; typed as string because the backend owns the set. */
+  readonly mode: string;
+  readonly department: string;
+  readonly job_role: string;
+  /** Empty when nobody is on record — approvals then have nowhere to go. */
+  readonly manager_id: string;
+  /** Requests waiting on this persona's decision, right now. */
+  readonly pending_approvals: number;
+}
+
+/** app/schemas/requests.py: SubjectDTO — the person an access request is about. */
+export interface SubjectDTO {
+  readonly employee_id: string;
+  /** `IDENTITY` | `NEW_JOINER`. */
+  readonly subject_type: string;
+  readonly name: string;
+  readonly department: string;
+  readonly job_role: string;
+  readonly job_level: string;
+  readonly location: string;
+  readonly manager_id: string;
+  readonly entitlements: readonly string[];
+}
+
+/** app/schemas/requests.py: SodConflictDTO */
+export interface SodConflictDTO {
+  readonly sod_id: string;
+  readonly conflicting_entitlement: string;
+  readonly severity: string;
+}
+
+/**
+ * app/schemas/requests.py: VerdictDTO — the deterministic answer.
+ *
+ * This, not the assistant's own summary, is what a confirmation card renders.
+ */
+export interface VerdictDTO {
+  readonly subject_id: string;
+  readonly entitlement_id: string;
+  readonly entitlement_name: string;
+  readonly application: string;
+  readonly risk_score: number | null;
+  readonly risk_category: string;
+  readonly approval_required: boolean;
+  /** The policy clause behind the verdict, quotable to an approver. */
+  readonly policy_basis: string;
+  readonly sod_conflicts: readonly SodConflictDTO[];
+  readonly already_held: boolean;
+  /** Empty when no approval is needed, or when needed but nobody is on record. */
+  readonly approver_id: string;
+  /** Separates those two cases. */
+  readonly approver_missing: boolean;
+}
+
+export interface AnalyzeResponseDTO {
+  readonly subject: SubjectDTO;
+  readonly verdict: VerdictDTO;
+}
+
+/** app/schemas/requests.py: AccessRequestDTO — one row of the request tracker. */
+export interface AccessRequestDTO {
+  readonly request_id: string;
+  readonly requester_id: string;
+  /** `EMPLOYEE` | `HR`. */
+  readonly requester_type: string;
+  readonly subject_id: string;
+  readonly subject_type: string;
+  readonly entitlement_id: string;
+  readonly entitlement_name: string;
+  readonly application: string;
+  /** One of the statuses `GET /requests/statuses` enumerates. */
+  readonly status: string;
+  readonly approval_required: boolean;
+  readonly policy_basis: string;
+  readonly approver_id: string;
+  readonly risk_score: number | null;
+  readonly risk_category: string;
+  /** Rendered `SOD002:AUDIT_TOOL` form, already split by the backend. */
+  readonly sod_conflicts: readonly string[];
+  readonly justification: string;
+  /** The approver's reason — this is how a refusal reaches the requester. */
+  readonly decision_note: string;
+  readonly created_at: string;
+  readonly decided_at: string;
+  readonly granted_at: string;
+}
+
+/** app/schemas/requests.py: CatalogEntryDTO */
+export interface CatalogEntryDTO {
+  readonly entitlement_id: string;
+  readonly entitlement_name: string;
+  readonly application: string;
+  readonly owner: string;
+  readonly risk_score: number | null;
+  readonly risk_category: string;
+  readonly approval_required: boolean;
+  readonly policy_basis: string;
+}
+
+/* --------------------------------------------------- workflow requests --- */
+
+/** app/schemas/requests.py: EntitlementRefDTO — id or exact name, not both required. */
+export interface EntitlementRefDTO {
+  readonly entitlement_id?: string;
+  readonly entitlement_name?: string;
+  readonly justification?: string;
+}
+
+export interface AnalyzeRequestDTO {
+  readonly subject_id: string;
+  readonly entitlement_id?: string;
+  readonly entitlement_name?: string;
+}
+
+/**
+ * app/schemas/requests.py: RaiseRequestDTO.
+ *
+ * `entitlements` is a list so HR can submit a whole accepted recommendation in
+ * one call; each is still judged on its own.
+ */
+export interface RaiseRequestDTO {
+  readonly requester_id: string;
+  readonly requester_type: 'EMPLOYEE' | 'HR';
+  readonly subject_id: string;
+  readonly entitlements: readonly EntitlementRefDTO[];
+  readonly justification?: string;
+}
+
+/** app/schemas/requests.py: DecisionDTO — a manager approving or rejecting. */
+export interface DecisionDTO {
+  readonly approver_id: string;
+  readonly note: string;
+}
+
+/** Query parameters `GET /requests` accepts. */
+export interface RequestFilters {
+  readonly requester_id?: string;
+  readonly approver_id?: string;
+  readonly subject_id?: string;
+  readonly status?: string;
+  readonly limit?: number;
+  readonly offset?: number;
 }

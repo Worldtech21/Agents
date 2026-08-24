@@ -9,18 +9,21 @@
  */
 
 import type {
+  RawEmployeeReply,
   RawEntitlement,
   RawRecommendationPayload,
+  RawRequestIntent,
   RawSodConflict,
   RawSupervisorError,
 } from '@infrastructure/types/supervisor';
 
 export type SupervisorParseResult =
   | { readonly kind: 'recommendation'; readonly payload: RawRecommendationPayload }
+  | { readonly kind: 'employee'; readonly reply: RawEmployeeReply }
   | { readonly kind: 'error'; readonly error: RawSupervisorError['error'] }
   | { readonly kind: 'unparseable'; readonly reason: string; readonly raw: string };
 
-/** Parse an answer string into one of the supervisor's two documented shapes. */
+/** Parse an answer string into one of the supervisor's documented shapes. */
 export function parseSupervisorAnswer(answer: string): SupervisorParseResult {
   const text = (answer ?? '').trim();
   if (!text) {
@@ -58,6 +61,12 @@ export function parseSupervisorAnswer(answer: string): SupervisorParseResult {
   }
 
   const record = parsed as Record<string, unknown>;
+
+  // Checked first: employee mode is the one shape that announces itself, so a
+  // reply carrying `mode` is never mistaken for a recommendation with gaps.
+  if (record.mode === 'employee') {
+    return { kind: 'employee', reply: normaliseEmployeeReply(record) };
+  }
 
   if (isSupervisorError(record)) {
     const error = record.error as Record<string, unknown>;
@@ -145,6 +154,40 @@ function normalisePayload(record: Record<string, unknown>): RawRecommendationPay
           incomplete: metadata.incomplete ?? null,
         }
       : null,
+  };
+}
+
+/**
+ * Coerce an employee-mode reply.
+ *
+ * `requestIntent` is dropped unless it names an entitlement: an intent that
+ * cannot identify what was asked for is not something to put a confirm button
+ * under, and the prompt requires null in that case anyway.
+ */
+function normaliseEmployeeReply(record: Record<string, unknown>): RawEmployeeReply {
+  const intent = asRecord(record.requestIntent);
+  const entitlementName = intent ? asString(intent.entitlementName) : null;
+  const entitlementId = intent ? asString(intent.entitlementId) : null;
+
+  return {
+    mode: 'employee',
+    reply: asString(record.reply) ?? '',
+    requestIntent:
+      intent && (entitlementName || entitlementId)
+        ? ({
+            subjectId: asString(intent.subjectId),
+            entitlementId,
+            entitlementName,
+            justification: asString(intent.justification),
+            approvalRequired:
+              typeof intent.approvalRequired === 'boolean' ? intent.approvalRequired : null,
+            policyBasis: asString(intent.policyBasis),
+            riskScore: typeof intent.riskScore === 'number' ? intent.riskScore : null,
+            sodConflicts: asStringArray(intent.sodConflicts),
+            readyToSubmit:
+              typeof intent.readyToSubmit === 'boolean' ? intent.readyToSubmit : null,
+          } satisfies RawRequestIntent)
+        : null,
   };
 }
 

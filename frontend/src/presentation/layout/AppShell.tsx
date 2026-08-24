@@ -4,12 +4,18 @@
  * The one place where hooks meet screens: it reads application state, asks the
  * BFF for view models, and hands screens nothing but view models and callbacks.
  * No screen below this file imports a hook or a wire type.
+ *
+ * Two personas share this shell. Rather than branch hook-by-hook, each mode's
+ * wiring lives in its own hook — `useHrShell` and `useEmployeeShell` — and this
+ * file stays composition, as its name claims.
  */
 
 import { useCallback, useMemo, useState } from 'react';
 
 import { useAgentRoster, useMcpStatus } from '@application/hooks/useAgentMesh';
 import { useConsole } from '@application/hooks/useConsole';
+import { useEmployeeShell } from '@application/hooks/useEmployeeShell';
+import { useHrShell } from '@application/hooks/useHrShell';
 import {
   normaliseEmployeeId,
   useRecommendationOutcomes,
@@ -17,25 +23,29 @@ import {
 } from '@application/hooks/useRecommendation';
 import { useServiceHealth } from '@application/hooks/useServiceHealth';
 import { useNavigation } from '@application/state/NavigationProvider';
+import { usePersona } from '@application/state/PersonaProvider';
 import { useQueue } from '@application/state/QueueProvider';
 import { useTheme } from '@application/state/ThemeProvider';
 import { toMeshSummary } from '@bff/mappers/agents.mapper';
 import { buildSuggestions } from '@bff/mappers/chat.mapper';
 import { toQueueRows, toQueueStats } from '@bff/mappers/queue.mapper';
 import { toTracePanel } from '@bff/mappers/trace.mapper';
-import type { NavItemVM, ViewKey } from '@bff/viewmodels';
+import type { ActorMode, ViewKey } from '@bff/viewmodels';
 import { Button } from '@presentation/atoms/Button';
 import { ErrorBoundary } from '@presentation/layout/ErrorBoundary';
 import styles from '@presentation/layout/layout.module.css';
 import { AppHeader } from '@presentation/organisms/AppHeader';
 import { Sidebar } from '@presentation/organisms/Sidebar';
+import { AssistantScreen } from '@presentation/screens/AssistantScreen';
 import { ConsoleScreen } from '@presentation/screens/ConsoleScreen';
 import { QueueScreen } from '@presentation/screens/QueueScreen';
 import { RecommendationScreen } from '@presentation/screens/RecommendationScreen';
+import { RequestsScreen } from '@presentation/screens/RequestsScreen';
 
 export function AppShell() {
   const { theme, toggle: toggleTheme } = useTheme();
   const { view, selectedEmployeeId, goTo, openReport } = useNavigation();
+  const persona = usePersona();
   const queue = useQueue();
 
   const health = useServiceHealth();
@@ -49,6 +59,11 @@ export function AppShell() {
 
   const consoleState = useConsole(agents);
   const outcomes = useRecommendationOutcomes(queue.employeeIds);
+
+  // Both are mounted regardless of mode: a hook cannot be called conditionally,
+  // and their queries are disabled when there is no actor to scope them to.
+  const hr = useHrShell(queue.entries.length, selectedEmployeeId);
+  const employee = useEmployeeShell();
 
   const [employeeField, setEmployeeField] = useState(selectedEmployeeId ?? '');
 
@@ -115,30 +130,19 @@ export function AppShell() {
     [openReport, queue, run],
   );
 
-  const navItems = useMemo<NavItemVM[]>(
-    () => [
-      { key: 'queue', label: 'Queue', icon: 'queue', badge: String(queue.entries.length) },
-      {
-        key: 'report',
-        label: 'Recommendation',
-        icon: 'report',
-        badge: selectedEmployeeId ?? '—',
-      },
-      { key: 'chat', label: 'Console', icon: 'chat', badge: String(consoleState.messages.length) },
-    ],
-    [queue.entries.length, selectedEmployeeId, consoleState.messages.length],
-  );
+  const navItems = persona.mode === 'hr' ? hr.navItems : employee.navItems;
 
   const suggestions = useMemo(
     () => buildSuggestions({ latest: run.lastOutcome ?? selectedOutcome ?? null, agents }),
     [run.lastOutcome, selectedOutcome, agents],
   );
 
-  const headerCopy = buildHeaderCopy(view, {
+  const headerCopy = buildHeaderCopy(view, persona.mode, {
     employeeId: selectedEmployeeId,
     employeeName:
       selectedOutcome?.kind === 'recommendation' ? selectedOutcome.view.employee.name : null,
     threadId: run.stream.threadId,
+    actorName: persona.actor?.name ?? null,
   });
 
   const bootError = health.isError
@@ -151,6 +155,10 @@ export function AppShell() {
         navItems={navItems}
         activeView={view}
         onNavigate={goTo}
+        personas={persona.personas}
+        actor={persona.actor}
+        personasLoading={persona.isLoading}
+        onSelectPersona={persona.setActor}
         mesh={mesh}
         meshLoading={roster.isLoading || mcp.isLoading}
         activeAgentKey={trace.activeAgentKey}
@@ -169,6 +177,8 @@ export function AppShell() {
           onCancel={run.cancel}
           isRunning={run.isRunning}
           disabled={employeeField.trim().length === 0 || health.data?.ready === false}
+          // The run control is HR's; an employee never analyses somebody else.
+          showRunControl={persona.mode === 'hr'}
         />
 
         {health.data && !health.data.ready ? (
@@ -220,6 +230,20 @@ export function AppShell() {
               trace={trace}
               onRun={startRun}
               onGoToQueue={() => goTo('queue')}
+              onSubmitRequests={(ids) => void hr.submitRequests(ids)}
+              isSubmitting={hr.isSubmitting}
+              submitSummary={hr.submitSummary}
+            />
+          ) : null}
+
+          {view === 'hrRequests' ? (
+            <RequestsScreen
+              rows={hr.history.rows}
+              isLoading={hr.history.isLoading}
+              error={hr.history.error}
+              emptyTitle="No access requests yet"
+              emptyBody="Run a recommendation for a joiner and submit the entitlements you accept. What is granted immediately, and what is waiting on a manager, will show here."
+              onRetry={hr.history.refetch}
             />
           ) : null}
 
@@ -233,6 +257,48 @@ export function AppShell() {
               onCancel={consoleState.cancel}
             />
           ) : null}
+
+          {view === 'assistant' ? (
+            <AssistantScreen
+              turns={employee.assistant.turns}
+              employeeName={persona.actor?.name ?? 'there'}
+              isBusy={employee.assistant.isBusy}
+              error={employee.assistant.error}
+              verdict={employee.verdict.verdict}
+              verdictLoading={employee.verdict.isLoading}
+              verdictError={employee.verdict.error}
+              isSubmitting={employee.raise.isRaising}
+              onAsk={(question) => void employee.assistant.ask(question)}
+              onConfirm={(verdict) => void employee.confirm(verdict)}
+              onDismissVerdict={employee.assistant.clearIntent}
+              onCancel={employee.assistant.cancel}
+            />
+          ) : null}
+
+          {view === 'approvals' ? (
+            <RequestsScreen
+              rows={employee.inbox.rows}
+              isLoading={employee.inbox.isLoading}
+              error={employee.inbox.error}
+              emptyTitle="Nothing waiting on you"
+              emptyBody="When somebody who reports to you asks for access that needs approval, it will appear here for you to approve or reject."
+              onRetry={employee.inbox.refetch}
+              onDecide={employee.decide}
+              decidingId={employee.decision.decidingId}
+              decisionError={employee.decision.error}
+            />
+          ) : null}
+
+          {view === 'myRequests' ? (
+            <RequestsScreen
+              rows={employee.history.rows}
+              isLoading={employee.history.isLoading}
+              error={employee.history.error}
+              emptyTitle="You have not asked for anything yet"
+              emptyBody="Ask the assistant for the access you need. Whatever you request will show here, along with your manager's decision and their reason."
+              onRetry={employee.history.refetch}
+            />
+          ) : null}
         </ErrorBoundary>
       </main>
     </div>
@@ -241,10 +307,12 @@ export function AppShell() {
 
 function buildHeaderCopy(
   view: ViewKey,
+  mode: ActorMode,
   context: {
     employeeId: string | null;
     employeeName: string | null;
     threadId: string | null;
+    actorName: string | null;
   },
 ): { crumb: string; title: string } {
   switch (view) {
@@ -260,10 +328,25 @@ function buildHeaderCopy(
           : 'Recommendation',
         title: context.employeeName ?? context.employeeId ?? 'No joiner selected',
       };
+    case 'hrRequests':
+      return { crumb: 'HR · raised for new joiners', title: 'Access requests' };
     case 'chat':
+      return { crumb: 'Governance · read-only questions', title: 'Access governance' };
+    case 'assistant':
       return {
-        crumb: 'Self-service · read-only questions',
-        title: 'Access governance',
+        crumb: `Self-service · ${context.actorName ?? 'employee'}`,
+        title: 'Request access',
       };
+    case 'approvals':
+      return { crumb: 'Manager · waiting on your decision', title: 'Approvals' };
+    case 'myRequests':
+      return {
+        crumb: `Self-service · ${context.actorName ?? 'employee'}`,
+        title: 'My requests',
+      };
+    default:
+      // `mode` decides which views exist; an unreachable one is a bug, not a
+      // state to render.
+      return { crumb: mode, title: 'Access Advisor' };
   }
 }

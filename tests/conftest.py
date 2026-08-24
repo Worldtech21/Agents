@@ -15,6 +15,7 @@ from langchain_core.runnables import Runnable
 from langchain_core.utils.function_calling import convert_to_openai_tool
 
 from app.core.config import Settings
+from app.core.exceptions import MCPConnectionError
 from app.domain.models import AgentSpec
 
 os.environ.setdefault("GOOGLE_API_KEY", "test-key-not-used")
@@ -82,6 +83,11 @@ class FakeToolProvider:
     async def get_tools(self, server_names: tuple[str, ...]) -> list[Any]:
         self.requested.append(server_names)
         return []
+
+    async def call_tool(self, server: str, tool: str, arguments: dict[str, Any]) -> Any:
+        raise MCPConnectionError(
+            "No MCP servers are configured.", details={"server": server, "tool": tool}
+        )
 
     def status(self) -> list[Any]:
         return []

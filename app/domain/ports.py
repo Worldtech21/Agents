@@ -43,6 +43,15 @@ class ToolProvider(Protocol):
         """Return every tool exposed by the named servers."""
         ...
 
+    async def call_tool(self, server: str, tool: str, arguments: dict[str, Any]) -> Any:
+        """Invoke one tool directly, with no LLM in the loop.
+
+        The agents reach tools through a model that chooses them; the workflow
+        services reach them through here, so a grant or an approval is an
+        ordinary function call rather than something a model decided to do.
+        """
+        ...
+
     def status(self) -> list[MCPServerStatus]:
         """Report per-server connectivity for health checks."""
         ...

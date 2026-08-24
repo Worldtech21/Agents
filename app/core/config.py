@@ -150,6 +150,10 @@ class Settings(BaseSettings):
     # ---------------------------------------------------------------- mcp
     mcp_required: bool = False
     mcp_connect_timeout_seconds: float = 30.0
+    #: How long a server that failed to connect stays written off before the
+    #: next call retries it. Without this a server that was down at boot stays
+    #: dead for the process lifetime, so bringing it back needs a restart.
+    mcp_retry_after_seconds: float = 30.0
 
     mcp_new_joiners_url: str | None = None
     mcp_new_joiners_transport: MCPTransport = "streamable_http"
@@ -174,7 +178,31 @@ class Settings(BaseSettings):
     mcp_policy_url: str | None = None
     mcp_policy_transport: MCPTransport = "streamable_http"
     mcp_policy_headers: Annotated[dict[str, str], NoDecode] = Field(default_factory=dict)
-    
+
+    #: The request tracker. Deliberately bound to no AgentSpec — its write tools
+    #: are driven from `app/services`, never from an LLM.
+    mcp_requests_url: str | None = None
+    mcp_requests_transport: MCPTransport = "streamable_http"
+    mcp_requests_headers: Annotated[dict[str, str], NoDecode] = Field(default_factory=dict)
+
+
+    # ------------------------------------------------------------- workflow
+    #: The two identities that Employee mode can act as. No login: the client
+    #: names its actor, and /personas is the list of actors it may name.
+    demo_employee_ids: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["EMP001", "EMP002"]
+    )
+    #: The single HR persona. Not an identity record — HR acts on others' behalf.
+    demo_hr_actor_id: str = "HR001"
+    demo_hr_actor_name: str = "HR Operations"
+
+    #: False runs the whole approval workflow without touching identity data —
+    #: requests still move through their states, nothing is actually granted.
+    provisioning_enabled: bool = True
+    #: Whether an SoD conflict escalates an otherwise auto-grantable entitlement
+    #: to manager approval. Policy has no clause on this; it is our choice.
+    sod_conflict_requires_approval: bool = True
+
     # Optional escape hatch for servers beyond the three first-class ones.
     # Shape: {"name": {"url": "...", "transport": "streamable_http", "headers": {}}}
     mcp_extra_servers: Annotated[dict[str, Any], NoDecode] = Field(default_factory=dict)
@@ -187,6 +215,7 @@ class Settings(BaseSettings):
         "mcp_policy_headers",
         "mcp_sod_test_headers",
         "mcp_entitlements_headers",
+        "mcp_requests_headers",
         "mcp_extra_servers",
         "llm_extra_params",
         mode="before",
@@ -195,7 +224,9 @@ class Settings(BaseSettings):
     def _coerce_json_mapping(cls, value: Any) -> dict[str, Any]:
         return _parse_json_mapping(value, "MCP JSON setting")
 
-    @field_validator("cors_allow_origins", "graph_stream_modes", mode="before")
+    @field_validator(
+        "cors_allow_origins", "graph_stream_modes", "demo_employee_ids", mode="before"
+    )
     @classmethod
     def _coerce_list(cls, value: Any) -> Any:
         if isinstance(value, str):
@@ -229,6 +260,7 @@ class Settings(BaseSettings):
             ("sod_test_mcp", self.mcp_sod_test_url, self.mcp_sod_test_transport, self.mcp_sod_test_headers),
             ("policy_mcp", self.mcp_policy_url, self.mcp_policy_transport, self.mcp_policy_headers),
             ("entitlements_mcp", self.mcp_entitlements_url, self.mcp_entitlements_transport, self.mcp_entitlements_headers),
+            ("requests_mcp", self.mcp_requests_url, self.mcp_requests_transport, self.mcp_requests_headers),
         )
         for name, url, transport, headers in first_class:
             if is_placeholder(url):

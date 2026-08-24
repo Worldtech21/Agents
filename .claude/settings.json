@@ -14,7 +14,11 @@
       "Bash(nohup .venv/bin/python -m uvicorn app.main:app --port 8010)",
       "Bash(curl -s -m 10 http://127.0.0.1:8010/api/v1/agents -o /tmp/claude-1000/-home-yuvraj-anand-Agents/8c346527-defb-40f4-b268-3d8aca548fc6/scratchpad/agents.json)",
       "Bash(timeout 900 curl -sN -X POST http://127.0.0.1:8010/api/v1/chat/stream -H 'Content-Type: application/json' -d '{\"message\":\"Recommend entitlements for employee NJ1004.\",\"thread_id\":\"probe-full\",\"stream_modes\":[\"updates\",\"custom\"]}')",
-      "Bash(echo \"curl exit=$?\")"
+      "Bash(echo \"curl exit=$?\")",
+      "Bash(echo \"EXIT=$?\")",
+      "Read(//home/yuvraj-anand/alchemy/new-joiners/api/**)",
+      "Read(//home/yuvraj-anand/Downloads/k8s/k8s/gke_version/new-joiners/**)",
+      "Bash(curl -s -m 2 localhost:8000/api/v1/health/live)"
     ]
   }
 }

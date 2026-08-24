@@ -8,6 +8,7 @@
 import { QueryClient } from '@tanstack/react-query';
 
 import { ApiError } from '@infrastructure/api/client';
+import type { RequestFilters } from '@infrastructure/types/api';
 
 export const queryKeys = {
   health: () => ['health'] as const,
@@ -17,6 +18,16 @@ export const queryKeys = {
   recommendation: (employeeId: string) => ['recommendation', employeeId] as const,
   recommendations: () => ['recommendation'] as const,
   threadState: (threadId: string) => ['chat', 'thread', threadId] as const,
+
+  /* ---------------------------------------------------------- workflow --- */
+  personas: () => ['personas'] as const,
+  catalog: () => ['catalog', 'entitlements'] as const,
+  /** Every request listing. Invalidated wholesale after any decision. */
+  requests: () => ['requests'] as const,
+  requestList: (filters: RequestFilters) => ['requests', 'list', filters] as const,
+  /** The deterministic verdict for one (subject, entitlement) pair. */
+  verdict: (subjectId: string, entitlement: string) =>
+    ['requests', 'verdict', subjectId, entitlement] as const,
 } as const;
 
 export function createQueryClient(): QueryClient {

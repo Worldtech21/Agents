@@ -1,0 +1,39 @@
+# Keep the build context small: the Dockerfile only needs pyproject.toml,
+# uv.lock, README.md and app/. Everything below would otherwise be uploaded to
+# the daemon on every build — .venv/ and .git/ dominate that.
+
+.venv/
+venv/
+.git/
+.gitignore
+
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+tests/
+
+# The web client builds from ./frontend as its own context.
+frontend/
+
+.env
+.env.*
+!.env.example
+
+.claude/
+.vscode/
+.idea/
+.DS_Store
+
+Dockerfile
+.dockerignore
+docker-compose.yml
+k8s/
+examples/

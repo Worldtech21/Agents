@@ -19,7 +19,7 @@ import { useSupervisorStream } from '@application/hooks/useSupervisorStream';
 import { usePersona } from '@application/state/PersonaProvider';
 import { toChatMessages, type ConversationTurn } from '@bff/mappers/chat.mapper';
 import { toAssistantOutcome } from '@bff/outcome';
-import type { ChatMessageVM, RequestIntentVM } from '@bff/viewmodels';
+import type { ChatMessageVM, RequestIntentVM, ThoughtSegmentVM } from '@bff/viewmodels';
 import { ApiError } from '@infrastructure/api/client';
 
 /** A turn plus whatever the assistant proposed on it. */
@@ -34,6 +34,8 @@ export interface AssistantState {
   readonly isBusy: boolean;
   readonly error: ApiError | null;
   readonly threadId: string | null;
+  /** The reasoning of the turn in flight, streaming as it arrives. */
+  readonly liveThoughts: readonly ThoughtSegmentVM[];
   /** The most recent proposal still awaiting the employee's confirmation. */
   readonly pendingIntent: RequestIntentVM | null;
   readonly ask: (question: string) => Promise<void>;
@@ -118,7 +120,15 @@ export function useAssistant(): AssistantState {
         setTurns((previous) =>
           previous.map((turn) =>
             turn.id === pendingId
-              ? { ...turn, text: rendered, citations: [], isStreaming: false }
+              ? {
+                  ...turn,
+                  text: rendered,
+                  citations: [],
+                  isStreaming: false,
+                  // Kept on the turn so the reasoning stays readable after the
+                  // run, collapsed, rather than vanishing with the live panel.
+                  thoughts: result.thoughts,
+                }
               : turn,
           ),
         );
@@ -195,6 +205,7 @@ export function useAssistant(): AssistantState {
     isBusy: stream.isStreaming,
     error,
     threadId: threadIdRef.current,
+    liveThoughts: stream.thoughts,
     pendingIntent: latestIntentId ? (intents.get(latestIntentId) ?? null) : null,
     ask,
     note,

@@ -53,7 +53,7 @@ class SupervisorFactory:
             output_mode=self._settings.graph_supervisor_output_mode,
             # Sequential delegation. Set True only if workers are genuinely
             # independent — parallel handoffs interleave in shared state.
-            parallel_tool_calls=False,
+            parallel_tool_calls=True,
             add_handoff_messages=True,
             add_handoff_back_messages=True,
             # Prefixes each worker's output with its name so the supervisor can

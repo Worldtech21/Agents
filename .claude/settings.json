@@ -18,7 +18,26 @@
       "Bash(echo \"EXIT=$?\")",
       "Read(//home/yuvraj-anand/alchemy/new-joiners/api/**)",
       "Read(//home/yuvraj-anand/Downloads/k8s/k8s/gke_version/new-joiners/**)",
-      "Bash(curl -s -m 2 localhost:8000/api/v1/health/live)"
+      "Bash(curl -s -m 2 localhost:8000/api/v1/health/live)",
+      "Bash(grep -v \"^[0-9]*:$\")",
+      "Bash(.venv/bin/pip list *)",
+      "Bash(python3 -c \"import langchain_google_genai, langchain_core; print\\(langchain_google_genai.__version__ if hasattr\\(langchain_google_genai,'__version__'\\) else '?'\\)\")",
+      "Bash(.venv/bin/python /tmp/claude-1000/-home-yuvraj-anand-Agents/8a602890-f4d9-4985-b107-c64b70001718/scratchpad/probe.py)",
+      "Bash(.venv/bin/python -m ruff check app/)",
+      "Bash(.venv/bin/python -m ruff check app/ tests/)",
+      "Bash(.venv/bin/python -m pytest tests/test_llm_thinking.py -q)",
+      "Bash(timeout 180 curl -N -s -X POST localhost:8077/api/v1/chat/stream -H 'content-type: application/json' -d '{\"message\":\"Which MCP-backed agents can answer questions right now?\",\"stream_modes\":[\"messages\",\"updates\"]}')",
+      "Bash(timeout 400 curl -N -s -X POST localhost:8077/api/v1/chat/stream -H 'content-type: application/json' -d '{\"message\":\"Recommend entitlements for employee NJ1004.\",\"stream_modes\":[\"messages\"]}')",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(sed -i 's#'\\\\''./src/bff/mappers/chat.mapper'\\\\''#'\\\\''/home/yuvraj-anand/Agents/frontend/src/bff/mappers/chat.mapper'\\\\''#; s#'\\\\''./src/bff/viewmodels'\\\\''#'\\\\''/home/yuvraj-anand/Agents/frontend/src/bff/viewmodels'\\\\''#' /tmp/claude-1000/-home-yuvraj-anand-Agents/8a602890-f4d9-4985-b107-c64b70001718/scratchpad/check.ts)",
+      "Bash(npx esbuild *)",
+      "Bash(node /tmp/claude-1000/-home-yuvraj-anand-Agents/8a602890-f4d9-4985-b107-c64b70001718/scratchpad/check.mjs /tmp/claude-1000/-home-yuvraj-anand-Agents/8a602890-f4d9-4985-b107-c64b70001718/scratchpad/stream2.txt)",
+      "Bash(curl -s localhost:8077/api/v1/agents)",
+      "Bash(.venv/bin/python -c \"import json,sys; [print\\(f\\\\\"{a['name']:24} -> {a['title']}\\\\\"\\) for a in json.load\\(sys.stdin\\)]\")",
+      "Bash(node /tmp/claude-1000/-home-yuvraj-anand-Agents/8a602890-f4d9-4985-b107-c64b70001718/scratchpad/check.mjs /tmp/claude-1000/-home-yuvraj-anand-Agents/8a602890-f4d9-4985-b107-c64b70001718/scratchpad/stream.txt)",
+      "Bash(npx eslint *)",
+      "Bash(echo \"ESLINT EXIT:$?\")",
+      "Bash(pkill -f \"uvicorn app.main:app --port 8077\")"
     ]
   }
 }

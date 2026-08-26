@@ -10,7 +10,7 @@ import { useMemo, useState } from 'react';
 
 import { toProvisioningPayload } from '@bff/mappers/recommendation.mapper';
 import type { RecommendationOutcome } from '@bff/outcome';
-import type { TracePanelVM } from '@bff/viewmodels';
+import type { ThoughtSegmentVM, TracePanelVM } from '@bff/viewmodels';
 import { Button } from '@presentation/atoms/Button';
 import { Icon } from '@presentation/atoms/Icon';
 import { SkeletonRegion } from '@presentation/atoms/Skeleton';
@@ -30,6 +30,7 @@ import {
   EmployeeProfileCard,
   EmployeeProfileCardSkeleton,
 } from '@presentation/organisms/EmployeeProfileCard';
+import { ThinkingTrace } from '@presentation/molecules/ThinkingTrace';
 import { ProvisioningHandoff } from '@presentation/organisms/ProvisioningHandoff';
 import { SodPanel } from '@presentation/organisms/SodPanel';
 import styles from '@presentation/screens/screens.module.css';
@@ -40,6 +41,8 @@ export interface RecommendationScreenProps {
   readonly isRunning: boolean;
   readonly runError: Error | null;
   readonly trace: TracePanelVM;
+  /** The reasoning of the run in flight, streaming as it arrives. */
+  readonly liveThoughts: readonly ThoughtSegmentVM[];
   readonly onRun: (employeeId: string) => void;
   readonly onGoToQueue: () => void;
   /** Raises one request per ticked entitlement. */
@@ -55,6 +58,7 @@ export function RecommendationScreen({
   isRunning,
   runError,
   trace,
+  liveThoughts,
   onRun,
   onGoToQueue,
   onSubmitRequests,
@@ -96,6 +100,12 @@ export function RecommendationScreen({
   return (
     <div className={styles.reportGrid}>
       <div className={styles.reportScroll}>
+        {/* A six-worker run is long. The trace panel says which agent is
+            working; this says what it is working out, while it does. */}
+        {isRunning && liveThoughts.length > 0 ? (
+          <ThinkingTrace thoughts={liveThoughts} isLive />
+        ) : null}
+
         <ReportBody
           employeeId={employeeId}
           outcome={outcome}

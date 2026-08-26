@@ -1,5 +1,6 @@
 import type { ChatMessageVM } from '@bff/viewmodels';
 import { Chip } from '@presentation/atoms/Chip';
+import { ThinkingTrace } from '@presentation/molecules/ThinkingTrace';
 import styles from '@presentation/molecules/molecules.module.css';
 
 export function ChatBubble({ message }: { message: ChatMessageVM }) {
@@ -12,6 +13,13 @@ export function ChatBubble({ message }: { message: ChatMessageVM }) {
       )}
     >
       <span className={styles.chatWho}>{message.who}</span>
+
+      {/* Above the bubble, and collapsed: the reasoning led to the answer, so
+          it reads in that order without competing with it. */}
+      {message.thoughts.length > 0 ? (
+        <ThinkingTrace thoughts={message.thoughts} isLive={false} />
+      ) : null}
+
       <div
         className={[
           styles.chatBubble,

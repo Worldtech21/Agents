@@ -8,11 +8,12 @@
 
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 
-import type { ChatMessageVM } from '@bff/viewmodels';
+import type { ChatMessageVM, ThoughtSegmentVM } from '@bff/viewmodels';
 import { Button } from '@presentation/atoms/Button';
 import { StatusDot } from '@presentation/atoms/StatusDot';
 import { ChatBubble } from '@presentation/molecules/ChatBubble';
 import { ErrorState } from '@presentation/molecules/StateViews';
+import { ThinkingTrace } from '@presentation/molecules/ThinkingTrace';
 import styles from '@presentation/screens/screens.module.css';
 
 export interface ConsoleScreenProps {
@@ -20,6 +21,8 @@ export interface ConsoleScreenProps {
   readonly suggestions: readonly string[];
   readonly isBusy: boolean;
   readonly error: Error | null;
+  /** The reasoning of the run in flight, streaming as it arrives. */
+  readonly liveThoughts: readonly ThoughtSegmentVM[];
   readonly onAsk: (question: string) => void;
   readonly onCancel: () => void;
 }
@@ -29,16 +32,19 @@ export function ConsoleScreen({
   suggestions,
   isBusy,
   error,
+  liveThoughts,
   onAsk,
   onCancel,
 }: ConsoleScreenProps) {
   const [draft, setDraft] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // The reasoning appearing is new content too, so the view follows it rather
+  // than stranding the reader above a panel that has started writing.
   useEffect(() => {
     const node = scrollRef.current;
     if (node) node.scrollTop = node.scrollHeight;
-  }, [messages.length, isBusy]);
+  }, [messages.length, isBusy, liveThoughts.length]);
 
   const send = (text: string) => {
     const question = text.trim();
@@ -77,7 +83,13 @@ export function ConsoleScreen({
           message.isStreaming ? null : <ChatBubble key={message.id} message={message} />,
         )}
 
-        {isBusy ? (
+        {/* Once the model starts thinking, its own words say more than a fixed
+            status line, so the indicator gives way to the reasoning. */}
+        {isBusy && liveThoughts.length > 0 ? (
+          <ThinkingTrace thoughts={liveThoughts} isLive />
+        ) : null}
+
+        {isBusy && liveThoughts.length === 0 ? (
           <div className={styles.typing} role="status">
             <StatusDot tone="blue" pulsing />
             <span className={styles.typingText}>Supervisor is routing to specialists</span>

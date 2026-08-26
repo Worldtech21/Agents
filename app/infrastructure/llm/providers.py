@@ -117,9 +117,15 @@ class GoogleGenAIAdapter(ProviderAdapter):
     (``api_key`` / ``max_tokens``) and the class sets ``populate_by_name``, so
     the normalised spellings land on the right fields.
 
-    Gemini's own reasoning controls (``thinking_budget``, ``thinking_level``,
-    ``include_thoughts``) are model-dependent, so they are not sent by default —
-    opt in per deployment through ``LLM_EXTRA_PARAMS``.
+    ``include_thoughts`` decides whether Gemini returns its thought summaries as
+    ``thinking`` content blocks; without it the model still reasons, but the
+    stream carries only the answer. ``LLM_THINKING`` drives it (see
+    :class:`~app.infrastructure.llm.factory.LLMFactory`).
+
+    ``LLM_EFFORT`` maps onto ``thinking_level`` — how hard the model reasons
+    before answering, and therefore how much there is to summarise. It is a
+    Gemini 3 control; on an older Gemini the equivalent is ``thinking_budget``,
+    which is model-dependent and so is left to ``LLM_EXTRA_PARAMS``.
     """
 
     name = "google_genai"
@@ -129,11 +135,28 @@ class GoogleGenAIAdapter(ProviderAdapter):
     env_key = "GOOGLE_API_KEY"
     default_model = "gemini-3.7-flash"
     # No stream_usage: ChatGoogleGenerativeAI declares `extra="ignore"`, so the
-    # kwarg is silently dropped rather than honoured.
-    capabilities = ProviderCapabilities()
+    # kwarg is silently dropped rather than honoured. `include_thoughts` and
+    # `reasoning_effort` are real fields on the class, so they are honoured.
+    capabilities = ProviderCapabilities(include_thoughts=True, effort=True)
+
+    #: `LLM_EFFORT` spans Anthropic's scale; Gemini's tops out at `high`.
+    EFFORT_LEVELS = {
+        "low": "low",
+        "medium": "medium",
+        "high": "high",
+        "xhigh": "high",
+        "max": "high",
+    }
 
     def build_kwargs(self, request: ModelRequest) -> dict[str, Any]:
-        return self.common_kwargs(request)
+        kwargs = self.common_kwargs(request)
+        if request.include_thoughts is not None:
+            kwargs["include_thoughts"] = request.include_thoughts
+        # `thinking_level` is a Gemini 3 control. Sending it to a 2.5 model is
+        # rejected, so an older deployment simply keeps the model's default.
+        if request.effort and "gemini-3" in request.model.lower():
+            kwargs["reasoning_effort"] = self.EFFORT_LEVELS.get(request.effort, "high")
+        return kwargs
 
 
 class BedrockAdapter(ProviderAdapter):

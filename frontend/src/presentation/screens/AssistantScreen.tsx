@@ -11,11 +11,12 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 
 import type { AssistantTurn } from '@application/hooks/useAssistant';
-import type { VerdictVM } from '@bff/viewmodels';
+import type { ThoughtSegmentVM, VerdictVM } from '@bff/viewmodels';
 import { Button } from '@presentation/atoms/Button';
 import { StatusDot } from '@presentation/atoms/StatusDot';
 import { ChatBubble } from '@presentation/molecules/ChatBubble';
 import { ErrorState } from '@presentation/molecules/StateViews';
+import { ThinkingTrace } from '@presentation/molecules/ThinkingTrace';
 import { VerdictCard } from '@presentation/molecules/VerdictCard';
 import styles from '@presentation/screens/screens.module.css';
 
@@ -30,6 +31,8 @@ export interface AssistantScreenProps {
   readonly employeeName: string;
   readonly isBusy: boolean;
   readonly error: Error | null;
+  /** The reasoning of the turn in flight, streaming as it arrives. */
+  readonly liveThoughts: readonly ThoughtSegmentVM[];
   readonly verdict: VerdictVM | null;
   readonly verdictLoading: boolean;
   readonly verdictError: Error | null;
@@ -45,6 +48,7 @@ export function AssistantScreen({
   employeeName,
   isBusy,
   error,
+  liveThoughts,
   verdict,
   verdictLoading,
   verdictError,
@@ -62,7 +66,7 @@ export function AssistantScreen({
   useEffect(() => {
     const node = scrollRef.current;
     if (node) node.scrollTop = node.scrollHeight;
-  }, [turns.length, isBusy, verdict, verdictLoading]);
+  }, [turns.length, isBusy, verdict, verdictLoading, liveThoughts.length]);
 
   const send = (text: string) => {
     const question = text.trim();
@@ -116,7 +120,13 @@ export function AssistantScreen({
           ),
         )}
 
-        {isBusy ? (
+        {/* Once the assistant starts thinking, its own words say more than a
+            fixed status line, so the indicator gives way to the reasoning. */}
+        {isBusy && liveThoughts.length > 0 ? (
+          <ThinkingTrace thoughts={liveThoughts} isLive />
+        ) : null}
+
+        {isBusy && liveThoughts.length === 0 ? (
           <div className={styles.typing} role="status">
             <StatusDot tone="blue" pulsing />
             <span className={styles.typingText}>Checking the catalog and the policy</span>

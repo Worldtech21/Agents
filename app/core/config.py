@@ -91,8 +91,14 @@ class Settings(BaseSettings):
     llm_temperature: float | None = None
     llm_top_p: float | None = None
 
-    #: Anthropic-shaped thinking controls; the Gemini adapter ignores them
-    #: (Gemini's own thinking knobs go through LLM_EXTRA_PARAMS).
+    #: Reasoning controls, spelled Anthropic-style and translated per provider.
+    #: `llm_effort` is how hard the model thinks before answering — Anthropic
+    #: takes it as `output_config.effort`, Gemini 3 as `thinking_level` (its
+    #: scale stops at `high`, so `xhigh`/`max` clamp there).
+    #: The two thinking settings decide whether that reasoning is *returned*:
+    #: `summarized` puts it on the stream, where the console and the assistant
+    #: render it live; `omitted` keeps it off the wire. The Gemini adapter maps
+    #: them onto `include_thoughts`.
     llm_effort: Literal["low", "medium", "high", "xhigh", "max"] = "high"
     llm_thinking: Literal["adaptive", "disabled"] = "adaptive"
     llm_thinking_display: Literal["summarized", "omitted"] = "summarized"

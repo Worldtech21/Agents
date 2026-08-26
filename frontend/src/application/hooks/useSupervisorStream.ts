@@ -10,7 +10,15 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { extractFinalAnswer } from '@bff/mappers/answer.mapper';
-import { toStreamedToken } from '@bff/mappers/chat.mapper';
+import {
+  appendActivity,
+  appendThought,
+  openThoughtTurn,
+  sealThoughts,
+  toAgentTurn,
+  toStreamedDeltas,
+} from '@bff/mappers/chat.mapper';
+import type { ThoughtSegmentVM } from '@bff/viewmodels';
 import { ApiError } from '@infrastructure/api/client';
 import { fetchThreadState, streamChat } from '@infrastructure/api/endpoints';
 import { extractAnswerFromThreadState } from '@bff/mappers/answer.mapper';
@@ -30,6 +38,8 @@ export interface SupervisorRunResult {
   readonly answer: string;
   readonly envelopes: readonly StreamEnvelopeDTO[];
   readonly threadId: string;
+  /** The reasoning that ran, so a settled turn can keep showing it. */
+  readonly thoughts: readonly ThoughtSegmentVM[];
 }
 
 export interface StartRunOptions {
@@ -44,6 +54,14 @@ export interface SupervisorStreamState {
   readonly envelopes: readonly StreamEnvelopeDTO[];
   /** Assistant text accumulated from `messages` deltas, for live typing. */
   readonly streamedText: string;
+  /**
+   * The model's reasoning as it arrives, split by the agent doing the thinking.
+   *
+   * Unlike `streamedText` this is safe to render the moment it lands: the
+   * answer is held back because it is partial JSON, but thinking is prose and
+   * is the whole point of showing it live.
+   */
+  readonly thoughts: readonly ThoughtSegmentVM[];
   readonly isStreaming: boolean;
   readonly error: ApiError | null;
   readonly threadId: string | null;
@@ -52,6 +70,7 @@ export interface SupervisorStreamState {
 const IDLE_STATE: SupervisorStreamState = {
   envelopes: [],
   streamedText: '',
+  thoughts: [],
   isStreaming: false,
   error: null,
   threadId: null,
@@ -68,10 +87,20 @@ export function useSupervisorStream(): SupervisorStream {
 
   const abortRef = useRef<AbortController | null>(null);
   const mountedRef = useRef(true);
-  const bufferRef = useRef<{ envelopes: StreamEnvelopeDTO[]; text: string }>({
+  const bufferRef = useRef<{
+    envelopes: StreamEnvelopeDTO[];
+    text: string;
+    thoughtsChanged: boolean;
+  }>({
     envelopes: [],
     text: '',
+    thoughtsChanged: false,
   });
+  /**
+   * Reasoning is folded here as it arrives rather than inside `setState`, so
+   * the run result can carry the finished list without waiting for a render.
+   */
+  const thoughtsRef = useRef<readonly ThoughtSegmentVM[]>([]);
   const flushTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
@@ -89,9 +118,11 @@ export function useSupervisorStream(): SupervisorStream {
       flushTimerRef.current = null;
     }
     const buffered = bufferRef.current;
-    if (buffered.envelopes.length === 0 && buffered.text === '') return;
+    if (buffered.envelopes.length === 0 && buffered.text === '' && !buffered.thoughtsChanged) {
+      return;
+    }
 
-    bufferRef.current = { envelopes: [], text: '' };
+    bufferRef.current = { envelopes: [], text: '', thoughtsChanged: false };
     if (!mountedRef.current) return;
 
     setState((previous) => {
@@ -101,6 +132,7 @@ export function useSupervisorStream(): SupervisorStream {
         envelopes:
           merged.length > MAX_TRACE_ENVELOPES ? merged.slice(-MAX_TRACE_ENVELOPES) : merged,
         streamedText: previous.streamedText + buffered.text,
+        thoughts: thoughtsRef.current,
       };
     });
   }, []);
@@ -113,18 +145,26 @@ export function useSupervisorStream(): SupervisorStream {
     }, FLUSH_INTERVAL_MS);
   }, [flush]);
 
+  /** Nothing further will be thought, so the open segment stops pulsing. */
+  const settleThoughts = useCallback(() => {
+    thoughtsRef.current = sealThoughts(thoughtsRef.current);
+    return thoughtsRef.current;
+  }, []);
+
   const cancel = useCallback(() => {
     abortRef.current?.abort();
     abortRef.current = null;
+    const thoughts = settleThoughts();
     if (mountedRef.current) {
-      setState((previous) => ({ ...previous, isStreaming: false }));
+      setState((previous) => ({ ...previous, isStreaming: false, thoughts }));
     }
-  }, []);
+  }, [settleThoughts]);
 
   const reset = useCallback(() => {
     abortRef.current?.abort();
     abortRef.current = null;
-    bufferRef.current = { envelopes: [], text: '' };
+    bufferRef.current = { envelopes: [], text: '', thoughtsChanged: false };
+    thoughtsRef.current = [];
     if (mountedRef.current) setState(IDLE_STATE);
   }, []);
 
@@ -136,11 +176,13 @@ export function useSupervisorStream(): SupervisorStream {
       abortRef.current = controller;
 
       const threadId = options.threadId ?? newThreadId();
-      bufferRef.current = { envelopes: [], text: '' };
+      bufferRef.current = { envelopes: [], text: '', thoughtsChanged: false };
+      thoughtsRef.current = [];
 
       setState({
         envelopes: [],
         streamedText: '',
+        thoughts: [],
         isStreaming: true,
         error: null,
         threadId,
@@ -161,11 +203,41 @@ export function useSupervisorStream(): SupervisorStream {
         for await (const envelope of stream) {
           if (controller.signal.aborted) break;
 
-          const token = toStreamedToken(envelope);
-          if (token !== null) {
-            bufferRef.current.text += token;
+          const deltas = toStreamedDeltas(envelope);
+          if (deltas.length > 0) {
+            for (const delta of deltas) {
+              if (delta.kind === 'thinking') {
+                thoughtsRef.current = appendThought(thoughtsRef.current, delta);
+                bufferRef.current.thoughtsChanged = true;
+              } else {
+                bufferRef.current.text += delta.text;
+              }
+            }
             scheduleFlush();
             continue;
+          }
+
+          // An agent taking the turn opens its node on the reasoning timeline,
+          // so the panel shows the delegation from the first moment of a run —
+          // not only once a provider gets around to summarising its thinking.
+          const agentKey = toAgentTurn(envelope);
+          if (agentKey !== null) {
+            const opened = openThoughtTurn(thoughtsRef.current, agentKey);
+            if (opened !== thoughtsRef.current) {
+              thoughtsRef.current = opened;
+              bufferRef.current.thoughtsChanged = true;
+            }
+          }
+
+          // The tools an agent called, what came back, and where it delegated —
+          // the same `updates` envelopes the trace panel reads, folded onto the
+          // agent whose turn produced them.
+          if (envelope.event === 'updates') {
+            const withActivity = appendActivity(thoughtsRef.current, envelope);
+            if (withActivity !== thoughtsRef.current) {
+              thoughtsRef.current = withActivity;
+              bufferRef.current.thoughtsChanged = true;
+            }
           }
 
           // Everything except token deltas is trace material: `updates` for the
@@ -181,6 +253,7 @@ export function useSupervisorStream(): SupervisorStream {
           }
         }
 
+        const thoughts = settleThoughts();
         flush();
 
         if (controller.signal.aborted) return null;
@@ -188,11 +261,12 @@ export function useSupervisorStream(): SupervisorStream {
         const answer = await resolveAnswer(collected, threadId, controller.signal);
 
         if (mountedRef.current) {
-          setState((previous) => ({ ...previous, isStreaming: false }));
+          setState((previous) => ({ ...previous, isStreaming: false, thoughts }));
         }
 
-        return { answer, envelopes: collected, threadId };
+        return { answer, envelopes: collected, threadId, thoughts };
       } catch (error) {
+        settleThoughts();
         flush();
         if (isAbort(error)) return null;
 
@@ -205,14 +279,19 @@ export function useSupervisorStream(): SupervisorStream {
               );
 
         if (mountedRef.current) {
-          setState((previous) => ({ ...previous, isStreaming: false, error: apiError }));
+          setState((previous) => ({
+            ...previous,
+            isStreaming: false,
+            error: apiError,
+            thoughts: thoughtsRef.current,
+          }));
         }
         throw apiError;
       } finally {
         if (abortRef.current === controller) abortRef.current = null;
       }
     },
-    [flush, scheduleFlush],
+    [flush, scheduleFlush, settleThoughts],
   );
 
   return { ...state, start, cancel, reset };

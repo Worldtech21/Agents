@@ -228,6 +228,7 @@ export function AppShell() {
               isRunning={run.isRunning}
               runError={run.stream.error}
               trace={trace}
+              liveThoughts={run.stream.thoughts}
               onRun={startRun}
               onGoToQueue={() => goTo('queue')}
               onSubmitRequests={(ids) => void hr.submitRequests(ids)}
@@ -253,6 +254,7 @@ export function AppShell() {
               suggestions={suggestions}
               isBusy={consoleState.isBusy}
               error={consoleState.error}
+              liveThoughts={consoleState.liveThoughts}
               onAsk={(question) => void consoleState.ask(question)}
               onCancel={consoleState.cancel}
             />
@@ -264,6 +266,7 @@ export function AppShell() {
               employeeName={persona.actor?.name ?? 'there'}
               isBusy={employee.assistant.isBusy}
               error={employee.assistant.error}
+              liveThoughts={employee.assistant.liveThoughts}
               verdict={employee.verdict.verdict}
               verdictLoading={employee.verdict.isLoading}
               verdictError={employee.verdict.error}

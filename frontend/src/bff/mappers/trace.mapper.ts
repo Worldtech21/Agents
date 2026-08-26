@@ -193,7 +193,7 @@ function describeMessage(
   return { label: `${humanise(stripAgentSuffix(agentKey))} reported`, detail: truncate(text) };
 }
 
-function stripAgentSuffix(value: string): string {
+export function stripAgentSuffix(value: string): string {
   return value.replace(/_agent$/i, '');
 }
 
@@ -205,7 +205,7 @@ function agentFromCustomEvent(payload: unknown): string | null {
   return typeof record.agent === 'string' ? record.agent : null;
 }
 
-function summariseArgs(calls: readonly { args?: Record<string, unknown> }[]): string {
+export function summariseArgs(calls: readonly { args?: Record<string, unknown> }[]): string {
   const pairs: string[] = [];
   for (const call of calls) {
     for (const [key, value] of Object.entries(call.args ?? {})) {
@@ -355,7 +355,7 @@ function stringifyValue(value: unknown): string {
   }
 }
 
-function truncate(value: string, limit = DETAIL_LIMIT): string {
+export function truncate(value: string, limit = DETAIL_LIMIT): string {
   const collapsed = value.replace(/\s+/g, ' ').trim();
   return collapsed.length <= limit ? collapsed : `${collapsed.slice(0, limit - 1)}…`;
 }

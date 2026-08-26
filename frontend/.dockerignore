@@ -1,0 +1,15 @@
+node_modules
+dist
+tsconfig.tsbuildinfo
+
+# Local secrets and local-only proxy targets; the image gets its values from
+# build args instead.
+.env
+.env.*
+!.env.example
+
+Dockerfile
+.dockerignore
+README.md
+npm-debug.log*
+.DS_Store

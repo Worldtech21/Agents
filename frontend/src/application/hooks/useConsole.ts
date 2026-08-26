@@ -14,7 +14,7 @@ import { useSupervisorStream } from '@application/hooks/useSupervisorStream';
 import { toAssistantText, toCitations, type ConversationTurn } from '@bff/mappers/chat.mapper';
 import { toRecommendationOutcome } from '@bff/outcome';
 import { toChatMessages } from '@bff/mappers/chat.mapper';
-import type { ChatMessageVM } from '@bff/viewmodels';
+import type { ChatMessageVM, ThoughtSegmentVM } from '@bff/viewmodels';
 import { ApiError } from '@infrastructure/api/client';
 import type { AgentInfoDTO } from '@infrastructure/types/api';
 
@@ -23,6 +23,8 @@ export interface ConsoleState {
   readonly isBusy: boolean;
   readonly error: ApiError | null;
   readonly threadId: string | null;
+  /** The reasoning of the run in flight, streaming as it arrives. */
+  readonly liveThoughts: readonly ThoughtSegmentVM[];
   readonly ask: (question: string) => Promise<void>;
   readonly cancel: () => void;
   readonly clear: () => void;
@@ -88,6 +90,9 @@ export function useConsole(agents: readonly AgentInfoDTO[]): ConsoleState {
                     'The supervisor finished without producing an answer for this thread.',
                   citations,
                   isStreaming: false,
+                  // Kept on the turn so the reasoning stays readable after the
+                  // run, collapsed, rather than vanishing with the live panel.
+                  thoughts: result.thoughts,
                 }
               : turn,
           ),
@@ -135,6 +140,7 @@ export function useConsole(agents: readonly AgentInfoDTO[]): ConsoleState {
     isBusy: stream.isStreaming,
     error,
     threadId: threadIdRef.current,
+    liveThoughts: stream.thoughts,
     ask,
     cancel,
     clear,

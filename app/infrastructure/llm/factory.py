@@ -62,6 +62,7 @@ class LLMFactory:
                 "provider": adapter.name,
                 "model": request.model,
                 "thinking": (request.thinking or {}).get("type"),
+                "include_thoughts": request.include_thoughts,
                 "effort": request.effort,
                 "max_tokens": request.max_tokens,
             },
@@ -127,6 +128,15 @@ class LLMFactory:
             )
         if caps.effort:
             request.effort = settings.llm_effort
+        # Gemini spells the same intent differently: it reasons regardless, and
+        # this only asks for the thought summaries to come back on the stream.
+        # `omitted` means the same thing here as it does for Anthropic — reason,
+        # but do not show the working.
+        if caps.include_thoughts:
+            request.include_thoughts = (
+                settings.llm_thinking == "adaptive"
+                and settings.llm_thinking_display != "omitted"
+            )
 
         request.extra.update(overrides)
         return request
@@ -188,6 +198,7 @@ def _hashable(request: ModelRequest) -> tuple[Any, ...]:
         request.timeout,
         request.max_retries,
         repr(request.thinking),
+        request.include_thoughts,
         request.effort,
         repr(sorted(request.extra.items(), key=lambda kv: kv[0])),
     )

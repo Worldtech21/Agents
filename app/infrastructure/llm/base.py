@@ -39,6 +39,10 @@ class ProviderCapabilities:
     #: Anthropic-style adaptive thinking + effort.
     thinking: bool = False
     effort: bool = False
+    #: Gemini-style opt-in for visible thought summaries. Separate from
+    #: `thinking` because Gemini reasons whether or not the thoughts are
+    #: returned — this flag only decides whether the client gets to see them.
+    include_thoughts: bool = True
     #: False for providers authenticated by other means (Bedrock IAM, local Ollama).
     requires_api_key: bool = True
 
@@ -57,6 +61,7 @@ class ModelRequest:
     max_retries: int | None = None
     thinking: dict[str, Any] | None = None
     effort: str | None = None
+    include_thoughts: bool | None = None
     #: Vendor-specific escape hatch (LLM_EXTRA_PARAMS + per-call overrides).
     extra: dict[str, Any] = field(default_factory=dict)
 

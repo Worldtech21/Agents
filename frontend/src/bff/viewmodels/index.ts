@@ -206,6 +206,53 @@ export interface TracePanelVM {
 
 /* ------------------------------------------------------------------ chat --- */
 
+/**
+ * One stretch of the model's reasoning, attributed to whoever was thinking.
+ *
+ * Segments are split by agent rather than by chunk: the supervisor's thinking
+ * and a worker's are different trains of thought, but a worker's own deltas are
+ * one paragraph and read as one. A new segment therefore *is* a handoff, which
+ * is what lets the panel render a run as delegation rather than as one voice.
+ */
+export interface ThoughtSegmentVM {
+  readonly key: string;
+  /** Namespace key, for matching against the mesh. */
+  readonly agentKey: string;
+  readonly agentLabel: string;
+  /** Everything this agent did on its turn, in the order it happened. */
+  readonly events: readonly ThoughtEventVM[];
+  /** `active` while this agent still holds the turn, `done` once it hands over. */
+  readonly state: TraceStepState;
+  readonly tone: Tone;
+  /** "1.84s" once the agent has finished; empty while it is still thinking. */
+  readonly durationLabel: string;
+  /**
+   * Epoch ms this segment opened. Present because `durationLabel` cannot be
+   * computed until the segment closes, and closing happens in a later chunk.
+   */
+  readonly startedAt: number;
+}
+
+/**
+ * One thing an agent did: reasoned, called a tool, got a result back, handed
+ * the turn on, or stated a conclusion.
+ *
+ * These are the run's actual events, not a narration of them — every one is
+ * built from a chunk LangGraph emitted, so an empty list means nothing
+ * happened rather than that nothing was captured.
+ */
+export type ThoughtEventKind = 'thinking' | 'tool.call' | 'tool.result' | 'handoff' | 'message';
+
+export interface ThoughtEventVM {
+  readonly key: string;
+  readonly kind: ThoughtEventKind;
+  /** "Called peer_holdings", "Delegated to Policy" — empty for reasoning. */
+  readonly label: string;
+  /** Arguments, result, or the reasoning prose itself. */
+  readonly detail: string;
+  readonly tone: Tone;
+}
+
 export interface ChatMessageVM {
   readonly id: string;
   readonly role: 'user' | 'assistant';
@@ -213,6 +260,8 @@ export interface ChatMessageVM {
   readonly text: string;
   readonly citations: readonly string[];
   readonly isStreaming: boolean;
+  /** The reasoning behind this turn. Empty when thinking is off or not kept. */
+  readonly thoughts: readonly ThoughtSegmentVM[];
 }
 
 /* ----------------------------------------------------------------- queue --- */

@@ -66,6 +66,7 @@ class Settings(BaseSettings):
     api_prefix: str = "/api/v1"
     log_level: str = "INFO"
     log_json: bool = False
+    root_path: str = ""
     # NoDecode: pydantic-settings JSON-decodes complex types from .env *before*
     # field validators run, which rejects friendly forms like `CORS_ALLOW_ORIGINS=*`
     # or a comma-separated list. NoDecode hands the raw string to _coerce_list.

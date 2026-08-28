@@ -12,6 +12,7 @@ export default defineConfig(({ mode }) => {
   const backend = env.VITE_DEV_PROXY_TARGET ?? 'http://127.0.0.1:8000';
 
   return {
+    base: env.VITE_BASE_PATH ?? '/',
     plugins: [react()],
     resolve: {
       alias: {

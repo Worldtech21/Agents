@@ -30,7 +30,15 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL \
     VITE_API_TIMEOUT_MS=$VITE_API_TIMEOUT_MS \
     VITE_STREAM_MODES=$VITE_STREAM_MODES
 
-RUN npm run build
+# Where the bundle expects to be served from. Vite writes absolute asset URLs
+# into index.html, so this has to be decided at build time — "/" is right for
+# compose and for any host that serves this app at its root, but on a shared
+# ingress that already has something at "/" the app needs its own prefix or its
+# /assets requests land on the other app (k8s: --build-arg VITE_BASE=/access-advisor/,
+# paired with VITE_API_BASE_URL=/access-advisor). Trailing slash is required.
+ARG VITE_BASE=/
+
+RUN npm run build -- --base="$VITE_BASE"
 
 
 FROM nginxinc/nginx-unprivileged:1.27-alpine

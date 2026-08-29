@@ -41,7 +41,8 @@
       "Bash(docker compose *)",
       "Bash(git checkout *)",
       "Bash(timeout 540 docker compose build api)",
-      "Bash(timeout 540 docker compose build web)"
+      "Bash(timeout 540 docker compose build web)",
+      "Bash(command -v nginx docker)"
     ]
   }
 }

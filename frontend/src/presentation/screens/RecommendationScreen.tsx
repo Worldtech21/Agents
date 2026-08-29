@@ -15,12 +15,7 @@ import type { TracePanelVM } from '@bff/viewmodels';
 import type { AgentInfoDTO } from '@infrastructure/types/api';
 import { Button } from '@presentation/atoms/Button';
 import { Icon } from '@presentation/atoms/Icon';
-import { SkeletonRegion } from '@presentation/atoms/Skeleton';
-import {
-  EntitlementCard,
-  EntitlementCardSkeleton,
-  OptionalEntitlementRow,
-} from '@presentation/molecules/EntitlementCard';
+import { EntitlementCard, OptionalEntitlementRow } from '@presentation/molecules/EntitlementCard';
 import {
   ErrorState,
   MalformedReplyState,
@@ -30,10 +25,7 @@ import {
 import { AgentTraceFlowModal } from '@presentation/organisms/AgentTraceFlowModal';
 import { AgentTracePanel } from '@presentation/organisms/AgentTracePanel';
 import { FlowCanvas } from '@presentation/organisms/FlowCanvas';
-import {
-  EmployeeProfileCard,
-  EmployeeProfileCardSkeleton,
-} from '@presentation/organisms/EmployeeProfileCard';
+import { EmployeeProfileCard } from '@presentation/organisms/EmployeeProfileCard';
 import { ProvisioningHandoff } from '@presentation/organisms/ProvisioningHandoff';
 import { SodPanel } from '@presentation/organisms/SodPanel';
 import styles from '@presentation/screens/screens.module.css';
@@ -118,44 +110,45 @@ export function RecommendationScreen({
   };
 
   return (
-    <div className={styles.reportGrid}>
-      <div className={styles.reportScroll}>
-        {/* A six-worker run is long. The trace panel says which agent is
-            working; this says what it is working out, while it does. */}
-        {isRunning ? (
-          <div className={styles.traceFlow}>
-            <FlowCanvas flow={flow} isRunning={isRunning} />
+    <div className={[styles.reportGrid, isRunning ? styles.reportGridSolo : ''].join(' ')}>
+      {/* A run in flight is the graph and nothing else: the report has no
+          content to show yet, and the trace panel would only list in words what
+          the graph is already drawing. Both come back the moment it lands. */}
+      {isRunning ? (
+        <div className={styles.traceFlow}>
+          <FlowCanvas flow={flow} isRunning={isRunning} />
+        </div>
+      ) : (
+        <>
+          <div className={styles.reportScroll}>
+            <ReportBody
+              employeeId={employeeId}
+              outcome={outcome}
+              runError={runError}
+              excluded={excluded}
+              selectedCount={selectedIds.size}
+              payloadJson={payloadJson}
+              isPayloadOpen={isPayloadOpen}
+              onTogglePayload={() => setPayloadOpen((open) => !open)}
+              onToggleEntitlement={toggle}
+              onRun={onRun}
+              onGoToQueue={onGoToQueue}
+              onSubmitRequests={() => onSubmitRequests([...selectedIds])}
+              isSubmitting={isSubmitting}
+              submitSummary={submitSummary}
+            />
           </div>
-        ) : (
 
-        <ReportBody
-          employeeId={employeeId}
-          outcome={outcome}
-          isRunning={isRunning}
-          runError={runError}
-          excluded={excluded}
-          selectedCount={selectedIds.size}
-          payloadJson={payloadJson}
-          isPayloadOpen={isPayloadOpen}
-          onTogglePayload={() => setPayloadOpen((open) => !open)}
-          onToggleEntitlement={toggle}
-          onRun={onRun}
-          onGoToQueue={onGoToQueue}
-          onSubmitRequests={() => onSubmitRequests([...selectedIds])}
-          isSubmitting={isSubmitting}
-          submitSummary={submitSummary}
-        />
-        )}
-      </div>
-        
-      <AgentTracePanel
-        trace={trace}
-        isRunning={isRunning}
-        canReplay={employeeId !== null}
-        onReplay={replay}
-        onOpenGraph={() => setGraphOpen(true)}
-      />
-        
+          <AgentTracePanel
+            trace={trace}
+            isRunning={isRunning}
+            canReplay={employeeId !== null}
+            onReplay={replay}
+            onOpenGraph={() => setGraphOpen(true)}
+          />
+        </>
+      )}
+
       <AgentTraceFlowModal
         open={isGraphOpen}
         flow={flow}
@@ -173,7 +166,6 @@ export function RecommendationScreen({
 interface ReportBodyProps {
   readonly employeeId: string | null;
   readonly outcome: RecommendationOutcome | undefined;
-  readonly isRunning: boolean;
   readonly runError: Error | null;
   readonly excluded: ReadonlySet<string>;
   readonly selectedCount: number;
@@ -191,7 +183,6 @@ interface ReportBodyProps {
 function ReportBody({
   employeeId,
   outcome,
-  isRunning,
   runError,
   excluded,
   selectedCount,
@@ -205,8 +196,6 @@ function ReportBody({
   isSubmitting,
   submitSummary,
 }: ReportBodyProps) {
-  if (isRunning && outcome === undefined) return <RecommendationSkeleton />;
-
   if (runError) {
     return (
       <ErrorState
@@ -357,19 +346,3 @@ function ReportBody({
   );
 }
 
-function RecommendationSkeleton() {
-  return (
-    <SkeletonRegion label="Running the recommendation">
-      <EmployeeProfileCardSkeleton />
-      <div className={styles.sectionHead}>
-        <h4 className={styles.sectionTitle}>Recommended entitlements</h4>
-        <span className={styles.sectionNote}>Waiting on the supervisor</span>
-      </div>
-      <div className={styles.cardStack}>
-        {Array.from({ length: 4 }, (_, index) => (
-          <EntitlementCardSkeleton key={index} />
-        ))}
-      </div>
-    </SkeletonRegion>
-  );
-}

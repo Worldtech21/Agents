@@ -185,13 +185,37 @@ export interface SupervisorRefusalVM {
 
 export type TraceStepState = 'done' | 'active' | 'idle' | 'failed';
 
+/**
+ * What a step is, so neither view has to read it back out of a label.
+ *
+ * `tool` is one whole tool use — the call and what it returned, which the
+ * graph draws as a single step because that is one thing the agent did.
+ */
+export type TraceStepKind = 'delegation' | 'tool' | 'report' | 'error';
+
 export interface TraceRowVM {
   readonly key: string;
   readonly label: string;
+  readonly kind: TraceStepKind;
   /** Namespace key of the worker that produced the step. */
   readonly agentKey: string;
+  /**
+   * The worker's namespace *instance* — `User_Profiling_Agent:bcf72bc4…`.
+   *
+   * The agent key says who; this says which visit. LangGraph gives a subgraph
+   * a fresh instance every time the supervisor delegates into it, so this is
+   * what separates a second delegation from a continuation of the first.
+   */
+  readonly instanceKey: string;
   readonly agentLabel: string;
+  /** The one line the row has room for: a tool's arguments, or the prose. */
   readonly detail: string;
+  /** What the tool returned, elided. Empty on every other kind of step. */
+  readonly resultPreview: string;
+  /** The arguments in full, pretty-printed. Empty when there were none. */
+  readonly inputPayload: string;
+  /** What came back in full, pretty-printed when it is JSON. */
+  readonly outputPayload: string;
   readonly durationLabel: string;
   readonly state: TraceStepState;
   readonly tone: Tone;
@@ -209,66 +233,171 @@ export interface TracePanelVM {
 /* ------------------------------------------------------------ trace flow --- */
 
 /**
- * The same trace, shaped as a graph rather than a list.
+ * The same trace, shaped as the system's execution flow rather than a list.
  *
- * The list reads a run as history; the graph reads it as delegation — the
- * supervisor fanning out to the workers it woke, each worker's steps hanging
- * below it in the order they happened. Both are built from the same envelopes,
- * so neither can say something the run did not do.
+ * The list reads a run as history; the graph reads it as architecture — the
+ * request at the top, the supervisor presiding in the middle, its workers to
+ * either side with their own tools chained beneath them, and the answer
+ * returning to the person who asked. A branch is a single visit to a single
+ * worker: delegate to the same agent twice and the graph draws two branches,
+ * because that is two separate pieces of work and folding them into one column
+ * would interleave two conversations that never met. Both views are built from
+ * the same envelopes, so neither can say something the run did not do.
  */
+
+/**
+ * The hue a node is drawn in — a role, not a state.
+ *
+ * Run state is already carried by `TraceStepState`, and it changes while a run
+ * is in flight; the lane never does. Holding them apart is what lets a card
+ * keep its identity from queued to done while still showing which it is: the
+ * lane tints the card and its lines, the state drives the dot, the ring and
+ * the wording.
+ */
+export type FlowLane =
+  | 'io'
+  | 'supervisor'
+  | 'information'
+  | 'intelligence'
+  | 'verification'
+  | 'evaluation'
+  | 'analysis'
+  | 'builder';
+
+/** One tool use, drawn hanging off the agent that made it. */
 export interface FlowStepVM {
   readonly key: string;
   readonly label: string;
+  readonly kind: TraceStepKind;
+  /** Its place in the drawing's numbering — `"5.2"`. */
+  readonly orderLabel: string;
+  /** The arguments a tool was called with, on one line. */
   readonly detail: string;
+  /** What it returned, on one line. */
+  readonly resultPreview: string;
+  /** Both payloads in full, which the card reveals when opened. */
+  readonly inputPayload: string;
+  readonly outputPayload: string;
   readonly durationLabel: string;
   readonly state: TraceStepState;
   readonly tone: Tone;
 }
 
-/**
- * One unbroken turn by one worker.
- *
- * A worker woken twice is two lanes, because that is two delegations — the
- * graph would otherwise fold a second handoff back into the first and lose the
- * shape of the run.
- */
-export interface FlowLaneVM {
+/** One visit to one worker: everything it did between being handed the brief and handing back. */
+export interface FlowAgentVM {
+  /** The namespace instance, so a second visit is a second node. */
   readonly key: string;
-  readonly agentKey: string;
   readonly agentLabel: string;
+  /** What the roster says this worker is for, under its name on the card. */
+  readonly role: string;
+  /** Its place in the drawing's numbering — `"5"`. */
+  readonly orderLabel: string;
+  readonly lane: FlowLane;
+  /** "2nd call" when the run reached this agent more than once, else empty. */
+  readonly visitLabel: string;
   /** "Working" | "Done" | "Failed". */
   readonly statusLabel: string;
   readonly state: TraceStepState;
   readonly tone: Tone;
   /** "4 steps". */
   readonly stepCountLabel: string;
-  /** Time spent across the lane's steps, or empty while it is still open. */
+  /** Time across the visit, or empty while it is still open. */
   readonly durationLabel: string;
+  /** Every step it took, in the order it took them. */
   readonly steps: readonly FlowStepVM[];
+}
+
+/**
+ * One delegation out, drawn as the connection that carried it.
+ *
+ * Exactly one per branch: a second delegation to the same agent is a second
+ * connection to a second node, so no two lines ever end in the same place.
+ */
+export interface FlowHandoffVM {
+  readonly key: string;
+  /** 1-based position in the run — the number the connection carries. */
+  readonly order: number;
+  /** The branch this connection ends at. The supervisor is always the source. */
+  readonly targetKey: string;
+  /** The graph's own name for the edge — `transfer_to_policy_evaluation_agent`. */
+  readonly transferLabel: string;
+  /** What the worker opened with, in the words of its own first step. */
+  readonly note: string;
+  readonly lane: FlowLane;
+  readonly state: TraceStepState;
+  readonly tone: Tone;
+}
+
+/**
+ * The other half of a delegation: the worker handing control back.
+ *
+ * Drawn as its own line rather than an arrowhead on the outbound one, because
+ * that is what the graph does — `transfer_back_to_supervisor` is a call the
+ * worker makes, and a run can stall with the outbound line drawn and this one
+ * not yet earned.
+ */
+export interface FlowReturnVM {
+  readonly key: string;
+  /** The branch the control is coming back from. */
+  readonly sourceKey: string;
+  readonly label: string;
+  readonly lane: FlowLane;
+  /** Idle until the visit closes: an open branch has not handed back yet. */
+  readonly state: TraceStepState;
+  readonly tone: Tone;
 }
 
 /** The supervisor, which presides over the run rather than appearing in it. */
 export interface FlowRootVM {
   readonly label: string;
+  readonly caption: string;
   readonly statusLabel: string;
   readonly state: TraceStepState;
+  readonly lane: FlowLane;
   readonly tone: Tone;
   /** "3 workers · 12 steps". */
   readonly detail: string;
+  /** What it is doing for the run, as the bullets under its name. */
+  readonly duties: readonly string[];
+}
+
+/**
+ * A node on the centre spine that is not an agent — the request, the answer
+ * being assembled, and the answer going back out.
+ */
+export interface FlowTerminalVM {
+  readonly label: string;
+  readonly detail: string;
+  readonly orderLabel: string;
+  readonly lane: FlowLane;
+  readonly state: TraceStepState;
+  readonly tone: Tone;
 }
 
 export interface TraceFlowVM {
+  /** The drawing's own heading, over the graph. */
+  readonly title: string;
+  /** The question that started the run. */
+  readonly request: FlowTerminalVM;
   readonly root: FlowRootVM;
-  readonly lanes: readonly FlowLaneVM[];
+  /** One per delegation, in the order the supervisor made them. */
+  readonly branches: readonly FlowAgentVM[];
+  /** In run order, which is the order the numbers read. */
+  readonly handoffs: readonly FlowHandoffVM[];
+  /** One per branch that has handed control back. */
+  readonly returns: readonly FlowReturnVM[];
+  /** Where the answer is put together, under the last of the work. */
+  readonly builder: FlowTerminalVM;
+  /** The answer, and the line closing the loop back to the request. */
+  readonly response: FlowTerminalVM;
   readonly statusLabel: string;
   readonly statusTone: Tone;
   readonly metaLabel: string;
-  /** The lane holding the turn, for the animated edge. */
-  readonly activeLaneKey: string | null;
-  /** True before anything has streamed — the canvas shows the supervisor alone. */
+  /** The agent holding the turn, for the animated connection. */
+  readonly activeAgentKey: string | null;
+  /** True before anything has streamed — the canvas shows the spine alone. */
   readonly isEmpty: boolean;
 }
-
 /* ------------------------------------------------------------------ chat --- */
 
 /**

@@ -39,6 +39,12 @@ export function TraceRow({ row, isLast }: { row: TraceRowVM; isLast: boolean }) 
         </div>
         <span className={styles.traceAgent}>{toDisplayLabel(row.agentLabel)}</span>
         {row.detail ? <span className={styles.traceDetail}>{row.detail}</span> : null}
+        {/* One row per tool use, so the row carries the return as well as the call. */}
+        {row.resultPreview ? (
+          <span className={[styles.traceDetail, styles.traceResult].join(' ')}>
+            {row.resultPreview}
+          </span>
+        ) : null}
       </div>
     </div>
   );

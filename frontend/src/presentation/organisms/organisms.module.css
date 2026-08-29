@@ -704,6 +704,16 @@
   fill: var(--hairline);
 }
 
+/* Arrowheads for the tool strands, which are drawn by hand and so get none
+   from React Flow. The element exists only to hold `<defs>`; markers resolve
+   by id across every SVG in the document, so it never needs to be visible. */
+.flowDefs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
 .flowCanvas :global(.react-flow__attribution) {
   background: transparent;
   font-size: 10px;

@@ -235,6 +235,7 @@ function toRow(args: {
   return {
     key: step.key,
     label: step.label,
+    agentKey: step.agentKey,
     agentLabel,
     detail: step.detail,
     durationLabel: elapsed === null ? '' : `${elapsed.toFixed(2)}s`,
@@ -294,6 +295,23 @@ function agentFromNamespace(namespace: readonly string[]): string | null {
 
 function normaliseAgentKey(value: string): string {
   return value.trim();
+}
+
+/**
+ * The two agents whose registered names read as jargon in the trace.
+ *
+ * The rename is presentational only — the graph's own vocabulary is what the
+ * envelopes carry, and matching on it anywhere else would be matching on a
+ * label rather than on a fact.
+ */
+const DISPLAY_RENAMES: readonly (readonly [RegExp, string])[] = [
+  [/identities/gi, 'User Profiling'],
+  [/sod\stest/gi, 'Policy Evaluation'],
+];
+
+/** A step or agent label, in the words the operator uses. */
+export function toDisplayLabel(value: string): string {
+  return DISPLAY_RENAMES.reduce((text, [pattern, replacement]) => text.replace(pattern, replacement), value);
 }
 
 /** `lookup_new_joiner` -> `Lookup new joiner`. */

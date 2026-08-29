@@ -18,7 +18,7 @@ from app.domain.ports import ToolProvider
 logger = get_logger(__name__)
 
 IDENTITIES_MCP = "identities_mcp"
-NEW_JOINERS_MCP = "new_joiners_mcp"
+NEW_JOINERS_MCP = "User_Profiling_MCP"
 
 
 class DirectoryService:

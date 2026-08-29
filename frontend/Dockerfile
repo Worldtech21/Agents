@@ -21,7 +21,7 @@ COPY src ./src
 # Baked into the bundle at build time.  The defaults mirror .env.example; the
 # empty base URL is what keeps requests same-origin for the nginx stage below.
 # Override with --build-arg only when the API is reached on its own hostname.
-ARG VITE_API_BASE_URL="http://access-advisor-middleware-svc.kalchemy.svc.cluster.local:8000/access-advisor-middleware"
+ARG VITE_API_BASE_URL="http://34.120.8.80/access-advisor-middleware"
 ARG VITE_API_PREFIX=/api/v1
 ARG VITE_API_TIMEOUT_MS=30000
 ARG VITE_STREAM_MODES=updates,messages,custom
@@ -54,7 +54,7 @@ USER 101
 # NGINX_ENTRYPOINT_LOCAL_RESOLVERS makes the entrypoint publish the pod's own
 # nameservers as $NGINX_LOCAL_RESOLVERS, which the /api block needs; the filter
 # limits substitution to those two names so nginx's own $variables survive.
-ENV BACKEND_ORIGIN=http://access-advisor-middleware-svc.kalchemy.svc.cluster.local:8000 \
+ENV BACKEND_ORIGIN=http://34.120.8.80/access-advisor-middleware \
     NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1 \
     NGINX_ENVSUBST_FILTER=^(BACKEND_ORIGIN|NGINX_LOCAL_RESOLVERS)
 COPY nginx.conf.template /etc/nginx/templates/default.conf.template

@@ -261,7 +261,7 @@ class Settings(BaseSettings):
         """
         servers: dict[str, dict[str, Any]] = {}
         first_class = (
-            ("new_joiners_mcp", self.mcp_new_joiners_url, self.mcp_new_joiners_transport, self.mcp_new_joiners_headers),
+            ("User_Profiling_MCP", self.mcp_new_joiners_url, self.mcp_new_joiners_transport, self.mcp_new_joiners_headers),
             ("peer_affinity_mcp", self.mcp_peer_affinity_url, self.mcp_peer_affinity_transport, self.mcp_peer_affinity_headers),
             ("identities_mcp", self.mcp_identities_url, self.mcp_identities_transport, self.mcp_identities_headers),
             ("sod_test_mcp", self.mcp_sod_test_url, self.mcp_sod_test_transport, self.mcp_sod_test_headers),

@@ -8,6 +8,7 @@
 
 import { useMemo, useState } from 'react';
 
+import { toTraceFlow } from '@bff/mappers/flow.mapper';
 import { toProvisioningPayload } from '@bff/mappers/recommendation.mapper';
 import type { RecommendationOutcome } from '@bff/outcome';
 import type { ThoughtSegmentVM, TracePanelVM } from '@bff/viewmodels';
@@ -25,12 +26,13 @@ import {
   RefusalState,
   StateView,
 } from '@presentation/molecules/StateViews';
+import { AgentTraceFlowModal } from '@presentation/organisms/AgentTraceFlowModal';
 import { AgentTracePanel } from '@presentation/organisms/AgentTracePanel';
 import {
   EmployeeProfileCard,
   EmployeeProfileCardSkeleton,
 } from '@presentation/organisms/EmployeeProfileCard';
-import { ThinkingTrace } from '@presentation/molecules/ThinkingTrace';
+// import { ThinkingTrace } from '@presentation/molecules/ThinkingTrace';
 import { ProvisioningHandoff } from '@presentation/organisms/ProvisioningHandoff';
 import { SodPanel } from '@presentation/organisms/SodPanel';
 import styles from '@presentation/screens/screens.module.css';
@@ -67,6 +69,7 @@ export function RecommendationScreen({
 }: RecommendationScreenProps) {
   const [excluded, setExcluded] = useState<ReadonlySet<string>>(new Set());
   const [isPayloadOpen, setPayloadOpen] = useState(false);
+  const [isGraphOpen, setGraphOpen] = useState(false);
 
   const recommendation = outcome?.kind === 'recommendation' ? outcome.view : null;
 
@@ -78,6 +81,10 @@ export function RecommendationScreen({
         .filter((id) => !excluded.has(id)),
     );
   }, [recommendation, excluded]);
+
+  // Kept out of the modal so the graph is already built when it opens, and so
+  // it keeps growing behind the panel while the modal is shut.
+  const flow = useMemo(() => toTraceFlow({ trace, running: isRunning }), [trace, isRunning]);
 
   const payloadJson = useMemo(() => {
     if (outcome?.kind !== 'recommendation') return '';
@@ -102,9 +109,9 @@ export function RecommendationScreen({
       <div className={styles.reportScroll}>
         {/* A six-worker run is long. The trace panel says which agent is
             working; this says what it is working out, while it does. */}
-        {isRunning && liveThoughts.length > 0 ? (
-          <ThinkingTrace thoughts={liveThoughts} isLive />
-        ) : null}
+        {/* {isRunning && liveThoughts.length > 0 ? (
+          // <ThinkingTrace thoughts={liveThoughts} isLive />
+        ) : null} */}
 
         <ReportBody
           employeeId={employeeId}
@@ -130,6 +137,16 @@ export function RecommendationScreen({
         isRunning={isRunning}
         canReplay={employeeId !== null}
         onReplay={replay}
+        onOpenGraph={() => setGraphOpen(true)}
+      />
+
+      <AgentTraceFlowModal
+        open={isGraphOpen}
+        flow={flow}
+        isRunning={isRunning}
+        canReplay={employeeId !== null}
+        onReplay={replay}
+        onClose={() => setGraphOpen(false)}
       />
     </div>
   );

@@ -19,6 +19,8 @@ export interface AgentTracePanelProps {
   readonly isRunning: boolean;
   readonly canReplay: boolean;
   readonly onReplay: () => void;
+  /** Opens the same trace as a graph. */
+  readonly onOpenGraph: () => void;
 }
 
 export function AgentTracePanel({
@@ -26,6 +28,7 @@ export function AgentTracePanel({
   isRunning,
   canReplay,
   onReplay,
+  onOpenGraph,
 }: AgentTracePanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -72,9 +75,12 @@ export function AgentTracePanel({
           variant="card"
           size="sm"
           className={styles.traceReplay}
-          onClick={onReplay}
-          disabled={!canReplay || isRunning}
+          onClick={onOpenGraph}
+          title="See the run as a graph"
         >
+          Graph
+        </Button>
+        <Button variant="card" size="sm" onClick={onReplay} disabled={!canReplay || isRunning}>
           Replay
         </Button>
       </div>

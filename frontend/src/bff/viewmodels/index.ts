@@ -188,6 +188,8 @@ export type TraceStepState = 'done' | 'active' | 'idle' | 'failed';
 export interface TraceRowVM {
   readonly key: string;
   readonly label: string;
+  /** Namespace key of the worker that produced the step. */
+  readonly agentKey: string;
   readonly agentLabel: string;
   readonly detail: string;
   readonly durationLabel: string;
@@ -202,6 +204,69 @@ export interface TracePanelVM {
   readonly metaLabel: string;
   /** Key of the agent currently working, for the sidebar mesh highlight. */
   readonly activeAgentKey: string | null;
+}
+
+/* ------------------------------------------------------------ trace flow --- */
+
+/**
+ * The same trace, shaped as a graph rather than a list.
+ *
+ * The list reads a run as history; the graph reads it as delegation — the
+ * supervisor fanning out to the workers it woke, each worker's steps hanging
+ * below it in the order they happened. Both are built from the same envelopes,
+ * so neither can say something the run did not do.
+ */
+export interface FlowStepVM {
+  readonly key: string;
+  readonly label: string;
+  readonly detail: string;
+  readonly durationLabel: string;
+  readonly state: TraceStepState;
+  readonly tone: Tone;
+}
+
+/**
+ * One unbroken turn by one worker.
+ *
+ * A worker woken twice is two lanes, because that is two delegations — the
+ * graph would otherwise fold a second handoff back into the first and lose the
+ * shape of the run.
+ */
+export interface FlowLaneVM {
+  readonly key: string;
+  readonly agentKey: string;
+  readonly agentLabel: string;
+  /** "Working" | "Done" | "Failed". */
+  readonly statusLabel: string;
+  readonly state: TraceStepState;
+  readonly tone: Tone;
+  /** "4 steps". */
+  readonly stepCountLabel: string;
+  /** Time spent across the lane's steps, or empty while it is still open. */
+  readonly durationLabel: string;
+  readonly steps: readonly FlowStepVM[];
+}
+
+/** The supervisor, which presides over the run rather than appearing in it. */
+export interface FlowRootVM {
+  readonly label: string;
+  readonly statusLabel: string;
+  readonly state: TraceStepState;
+  readonly tone: Tone;
+  /** "3 workers · 12 steps". */
+  readonly detail: string;
+}
+
+export interface TraceFlowVM {
+  readonly root: FlowRootVM;
+  readonly lanes: readonly FlowLaneVM[];
+  readonly statusLabel: string;
+  readonly statusTone: Tone;
+  readonly metaLabel: string;
+  /** The lane holding the turn, for the animated edge. */
+  readonly activeLaneKey: string | null;
+  /** True before anything has streamed — the canvas shows the supervisor alone. */
+  readonly isEmpty: boolean;
 }
 
 /* ------------------------------------------------------------------ chat --- */

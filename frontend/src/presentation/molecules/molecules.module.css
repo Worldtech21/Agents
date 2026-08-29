@@ -935,3 +935,108 @@
   gap: 8px;
   padding-top: 4px;
 }
+
+/* ------------------------------------------------------- trace flow node --- */
+
+/* Every node on the delegation graph is this card. `--tone` is set inline from
+   the view model's tone, so the state colouring is one rule rather than four. */
+.flowCard {
+  box-sizing: border-box;
+  width: 264px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 11px 13px;
+  border: 1px solid var(--hairline);
+  border-left: 2.5px solid var(--tone, var(--hairline));
+  border-radius: 14px;
+  background: var(--card);
+  font-family: var(--font-text);
+  color: var(--ink);
+  text-align: left;
+  cursor: default;
+}
+
+.flowCard[data-state='active'] {
+  border-color: var(--tone);
+  box-shadow: 0 0 0 3px var(--tint);
+}
+
+.flowCard[data-state='idle'] {
+  opacity: 0.72;
+}
+
+.flowRoot {
+  background: var(--pearl);
+}
+
+.flowLane {
+  background: var(--card);
+}
+
+/* A step is subordinate to the lane above it, and reads that way. */
+.flowStep {
+  padding: 9px 12px;
+  border-radius: 12px;
+  background: var(--card);
+}
+
+.flowCardHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.flowRootName,
+.flowLaneName {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: var(--track-14);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.flowStepName {
+  font-size: 13px;
+  letter-spacing: var(--track-12);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.flowStatus {
+  margin-left: auto;
+  flex: none;
+  font-size: 11px;
+  letter-spacing: var(--track-12);
+  color: var(--tone, var(--ink-48));
+}
+
+.flowStepMs {
+  margin-left: auto;
+  flex: none;
+  font-size: 11px;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+}
+
+.flowMeta {
+  font-size: 12px;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+}
+
+/* Two lines of the step's own words; the panel beside it carries the rest. */
+.flowDetail {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 11.5px;
+  line-height: 1.4;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+  overflow-wrap: anywhere;
+}

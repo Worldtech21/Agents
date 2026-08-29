@@ -19,30 +19,19 @@ from app.agents.prompts import (
 from app.domain.models import AgentSpec
 
 NEW_JOINERS_AGENT = AgentSpec(
-    name="new_joiners_agent",
-    title="New Joiners agent",
+    name="User_Profiling_Agent",
+    title="User Profiling Agent",
     description=(
         "Looks up new hires and their joining attributes — department, job "
         "role, level, location, manager and cost center — by employee_id."
     ),
     prompt=NEW_JOINER_AGENT_PROMPT,
-    mcp_servers=("new_joiners_mcp",),
-)
-
-IDENTITIES_AGENT = AgentSpec(
-    name="identities_agent",
-    title="Identities agent",
-    description=(
-        "Looks up identity records — status, lifecycle dates, linked "
-        "downstream accounts, manager and department — by any identifier."
-    ),
-    prompt=IDENTITIES_AGENT_PROMPT,
-    mcp_servers=("identities_mcp",),
+    mcp_servers=("User_Profiling_MCP",),
 )
 
 PEER_AFFINITY_AGENT = AgentSpec(
-    name="peer_affinity_agent",
-    title="Peer Affinity agent",
+    name="Affinity_Intelligence_Agent",
+    title="Affinity Intelligence Agent(Kestrel)",
     description=(
         "Reads the peer group for a person and reports what those peers "
         "hold in common, with the counts behind each proportion."
@@ -51,20 +40,20 @@ PEER_AFFINITY_AGENT = AgentSpec(
     mcp_servers=("peer_affinity_mcp",),
 )
 
-SOD_TEST_AGENT = AgentSpec(
-    name="sod_test_agent",
-    title="SOD Test agent",
+ENTITILEMENTS_AGENT = AgentSpec(
+    name="Access_Verification_Agent",
+    title="Access Verification Agent",
     description=(
-        "Runs separation-of-duties checks over a combination of "
-        "entitlements and reports the rules it breaks, with severity."
+        "Looks up entitlements — owning application, owner, risk rating and "
+        "current holders — by entitlement id or display name."
     ),
-    prompt=SOD_TEST_AGENT_PROMPT,
-    mcp_servers=("sod_test_mcp",),
+    prompt=ENTITILEMENTS_AGENT_PROMPT,
+    mcp_servers=("entitlements_mcp",),
 )
 
 POLICY_AGENT = AgentSpec(
-    name="policy_agent",
-    title="Policy agent",
+    name="Policy_Evaluation_Agent",
+    title="Policy Evaluation Agent",
     description=(
         "Retrieves access policies — eligibility, approval requirements and "
         "certification cadence — and quotes the clause that applies."
@@ -73,15 +62,26 @@ POLICY_AGENT = AgentSpec(
     mcp_servers=("policy_mcp",),
 )
 
-ENTITILEMENTS_AGENT = AgentSpec(
-    name="entitlements_agent",
-    title="Entitlements agent",
+IDENTITIES_AGENT = AgentSpec(
+    name="Identities_Agent",
+    title="Identities Agent",
     description=(
-        "Looks up entitlements — owning application, owner, risk rating and "
-        "current holders — by entitlement id or display name."
+        "Looks up identity records — status, lifecycle dates, linked "
+        "downstream accounts, manager and department — by any identifier."
     ),
-    prompt=ENTITILEMENTS_AGENT_PROMPT,
-    mcp_servers=("entitlements_mcp",),
+    prompt=IDENTITIES_AGENT_PROMPT,
+    mcp_servers=("identities_mcp",),
+)
+
+SOD_TEST_AGENT = AgentSpec(
+    name="SOD_Test_Agent",
+    title="SOD Test Agent",
+    description=(
+        "Runs separation-of-duties checks over a combination of "
+        "entitlements and reports the rules it breaks, with severity."
+    ),
+    prompt=SOD_TEST_AGENT_PROMPT,
+    mcp_servers=("sod_test_mcp",),
 )
 
 #: Registration order is the order the supervisor sees the roster in.

@@ -61,7 +61,7 @@ def test_headers_accept_a_json_string_from_env():
         mcp_new_joiners_headers='{"Authorization": "Bearer abc"}',
     )
     servers = settings.mcp_server_settings()
-    assert servers["new_joiners_mcp"]["headers"] == {"Authorization": "Bearer abc"}
+    assert servers["User_Profiling_MCP"]["headers"] == {"Authorization": "Bearer abc"}
 
 
 def test_extra_servers_merge_in_from_json():

@@ -59,10 +59,20 @@ export async function* readSseFrames<TBody>(
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
+  let delivered = 0;
 
   try {
     for (;;) {
-      const { done, value } = await reader.read();
+      let chunk: ReadableStreamReadResult<Uint8Array>;
+      try {
+        chunk = await reader.read();
+      } catch (error) {
+        // A cancelled run must stay a cancellation, not become a failure.
+        if (error instanceof DOMException && error.name === 'AbortError') throw error;
+        throw truncationError(delivered, response.status);
+      }
+
+      const { done, value } = chunk;
       if (done) break;
 
       buffer += decoder.decode(value, { stream: true });
@@ -73,7 +83,10 @@ export async function* readSseFrames<TBody>(
         const raw = buffer.slice(0, separator.index);
         buffer = buffer.slice(separator.index + separator.length);
         const frame = parseFrame(raw);
-        if (frame) yield frame;
+        if (frame) {
+          delivered += 1;
+          yield frame;
+        }
         separator = findSeparator(buffer);
       }
     }
@@ -152,6 +165,34 @@ function parseFrame(raw: string): SseFrame | null {
 
   if (dataLines.length === 0) return null;
   return { event, id, data: dataLines.join('\n') };
+}
+
+/**
+ * Classify a connection severed part-way through the response body.
+ *
+ * The headers had already arrived and frames were flowing, so the service was
+ * reachable and willing — something between the browser and uvicorn cut a
+ * chunked body short. Reported by the browser as
+ * `net::ERR_INCOMPLETE_CHUNKED_ENCODING`, and by curl as exit 18.
+ *
+ * This is worth its own code because the cause is almost never the service:
+ * on GKE it was the Gateway's backend-service `timeoutSec`, a wall-clock budget
+ * for the whole response that no keep-alive can extend (see k8s/README.md).
+ * Folding it into the generic network-failure branch is what made that take a
+ * while to find.
+ */
+function truncationError(delivered: number, status: number): ApiError {
+  if (delivered === 0) {
+    return new ApiError('The stream closed before any events arrived.', {
+      code: 'stream_empty',
+      status,
+    });
+  }
+  return new ApiError(
+    'The connection closed part-way through the run. A proxy or load balancer ' +
+      'most likely timed the response out before the run finished.',
+    { code: 'stream_truncated', status, details: { framesDelivered: delivered } },
+  );
 }
 
 async function describeFailure(response: Response): Promise<string> {

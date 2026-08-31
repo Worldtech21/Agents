@@ -1,0 +1,48 @@
+# Raise the load balancer's response budget for the streaming API.
+#
+# The stack is fronted by the `kalchemy-gateway` Gateway
+# (gke-l7-global-external-managed, 34.120.8.80).  For every Service an HTTPRoute
+# references, the GKE Gateway controller generates a Compute Engine backend
+# service — here
+# `gkegw1-jgyx-kalchem-access-advisor-middleware-8000-78qnvyiusmha` — and unless
+# told otherwise it gives it GCP's default `timeoutSec: 30`.
+#
+# That 30s is a wall-clock budget for the entire response, not an idle timeout.
+# `POST /api/v1/chat/stream` holds one SSE response open for the whole
+# supervisor run, so any run longer than 30s has its connection destroyed
+# mid-chunk.  The browser surfaces the severed chunked body as
+# `net::ERR_INCOMPLETE_CHUNKED_ENCODING` and the SPA renders "network error";
+# curl reports `(18) transfer closed with outstanding read data remaining`.
+# The `ping=15` keep-alive in app/api/v1/endpoints/chat.py cannot help, because
+# traffic on the connection does not extend a wall-clock budget.  Nothing
+# reproduces locally because no load balancer sits in front of uvicorn there —
+# see mocks/repro.sh, which puts that hop back.
+#
+# On a Gateway this is set with GCPBackendPolicy.  BackendConfig is the Ingress
+# mechanism and is ignored here, and `gcloud compute backend-services update
+# --timeout` is reverted whenever the Gateway controller next reconciles, so
+# neither is a durable fix.
+#
+#   kubectl apply -f k8s/gcp-backend-policy.yaml
+#
+# Propagation to the data plane takes a minute or two; k8s/README.md has the
+# verification commands.
+
+apiVersion: networking.gke.io/v1
+kind: GCPBackendPolicy
+metadata:
+  name: access-advisor-middleware-timeout
+  namespace: kalchemy
+spec:
+  # Attaches by name to the Service the HTTPRoute `kalchemy-routes-2` sends
+  # /access-advisor-middleware to.  Policy and Service must share a namespace.
+  targetRef:
+    group: ""
+    kind: Service
+    name: access-advisor-middleware-svc
+  default:
+    # One hour.  Chosen as a ceiling that no legitimate run approaches — the
+    # observed runs take 40-90s — rather than as an expected duration.  It caps
+    # a wedged connection without ever truncating a healthy one; the client's
+    # own abort remains the normal way a run is stopped early.
+    timeoutSec: 3600

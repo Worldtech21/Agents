@@ -16,9 +16,18 @@ services:
       context: .
       dockerfile: Dockerfile
     image: access-advisor-api:latest
-    # nginx.conf.template resolves BACKEND_ORIGIN by name, so the hostname the
-    # web service dials has to match this one.
+    # nginx.conf.template resolves BACKEND_ORIGIN by name, so the name the web
+    # service dials has to exist on the compose network. The alias is what
+    # registers it with Docker's embedded DNS — `hostname` alone happens to be
+    # registered too, but it is not the documented mechanism, and a container
+    # left over from before it was set resolves as SERVFAIL and 502s the SPA.
+    # It also matches the k8s Service name, so BACKEND_ORIGIN is identical in
+    # both environments.
     hostname: access-advisor-api
+    networks:
+      default:
+        aliases:
+          - access-advisor-api
     # Secrets and tuning come from .env (see the keys listed there). It is
     # gitignored, so copy it in before the first `up`.
     env_file:

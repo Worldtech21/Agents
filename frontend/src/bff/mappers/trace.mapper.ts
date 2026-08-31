@@ -8,7 +8,13 @@
  * two facts are enough to reconstruct the delegation as it happens.
  */
 
-import type { TracePanelVM, TraceRowVM, TraceStepState, Tone } from '@bff/viewmodels';
+import type {
+  TracePanelVM,
+  TraceRowVM,
+  TraceStepKind,
+  TraceStepState,
+  Tone,
+} from '@bff/viewmodels';
 import type {
   AgentInfoDTO,
   ControlErrorPayload,
@@ -28,13 +34,36 @@ export interface TraceInput {
   readonly settled: boolean;
 }
 
+/** The supervisor's own namespace key. It presides over a run rather than appearing in it. */
+export const SUPERVISOR_KEY = 'supervisor';
+
+/**
+ * A step, while it is still being assembled.
+ *
+ * A tool use arrives as two envelopes — the call, then the result, several
+ * seconds apart — and is one step. `callId` and `resultFor` are how the two
+ * halves find each other; everything after `foldToolResults` has both.
+ */
 interface TraceStep {
-  readonly key: string;
-  readonly agentKey: string;
-  readonly label: string;
-  readonly detail: string;
-  readonly ts: number;
-  readonly failed: boolean;
+  key: string;
+  kind: TraceStepKind;
+  agentKey: string;
+  instanceKey: string;
+  label: string;
+  detail: string;
+  resultPreview: string;
+  inputPayload: string;
+  outputPayload: string;
+  /** `call_35710` on a tool call, waiting for the result that quotes it. */
+  callId: string;
+  /** `call_35710` on a tool result, naming the call it answers. */
+  resultFor: string;
+  /** On a delegation, the worker being handed to — named as the roster names it. */
+  targetKey: string;
+  ts: number;
+  /** When the result came back, so a tool use can time itself. */
+  endTs: number | null;
+  failed: boolean;
 }
 
 export function toTracePanel(input: TraceInput): TracePanelVM {
@@ -53,12 +82,22 @@ export function toTracePanel(input: TraceInput): TracePanelVM {
       else if (envelope.event === 'stream.error') {
         streamError = asControlError(envelope.payload);
         endTs = envelope.ts;
+        const message = streamError?.message ?? 'The graph stopped before finishing.';
         steps.push({
           key: `err-${envelope.seq}`,
-          agentKey: 'supervisor',
+          kind: 'error',
+          agentKey: SUPERVISOR_KEY,
+          instanceKey: `${SUPERVISOR_KEY}:error-${envelope.seq}`,
           label: 'Run failed',
-          detail: streamError?.message ?? 'The graph stopped before finishing.',
+          detail: message,
+          resultPreview: '',
+          inputPayload: '',
+          outputPayload: message,
+          callId: '',
+          resultFor: '',
+          targetKey: '',
           ts: envelope.ts,
+          endTs: null,
           failed: true,
         });
       }
@@ -79,25 +118,70 @@ export function toTracePanel(input: TraceInput): TracePanelVM {
     steps.push(...stepsFromUpdate(envelope));
   }
 
-  const rows = steps.map((step, index) =>
+  const folded = foldToolResults(steps);
+
+  // A delegation is named by the roster, not by the tool that carried it:
+  // `transfer_to_sod_test_agent` reads as "Sod test" and the column it lands on
+  // reads "SOD Test", and one run must not call one worker two things.
+  for (const step of folded) {
+    if (step.kind === 'delegation' && step.targetKey) {
+      step.label = `Delegate to ${labelFor(labels, step.targetKey)}`;
+    }
+  }
+
+  const rows = folded.map((step, index) =>
     toRow({
       step,
-      previousTs: index === 0 ? startTs : (steps[index - 1]?.ts ?? startTs),
-      state: resolveState(step, index, steps.length, input),
-      agentLabel: labels.get(step.agentKey) ?? humanise(step.agentKey),
+      previousTs: index === 0 ? startTs : (folded[index - 1]?.ts ?? startTs),
+      state: resolveState(step, index, folded.length, input),
+      agentLabel: labelFor(labels, step.agentKey),
     }),
   );
 
-  const lastStep = steps[steps.length - 1];
+  const lastStep = folded[folded.length - 1];
   const activeAgentKey = input.running ? (lastActiveAgent ?? lastStep?.agentKey ?? null) : null;
 
   return {
     rows,
     statusLabel: input.running ? 'Streaming' : streamError ? 'Failed' : input.settled ? 'Complete' : 'Idle',
     statusTone: input.running ? 'blue' : streamError ? 'red' : input.settled ? 'green' : 'neutral',
-    metaLabel: buildMetaLabel(input, steps.length, startTs, endTs, streamError),
+    metaLabel: buildMetaLabel(input, folded.length, startTs, endTs, streamError),
     activeAgentKey,
   };
+}
+
+/**
+ * Put each tool result back with the call it answers.
+ *
+ * The graph draws one step per tool *use*, not one per envelope: `list_policies`
+ * called and `list_policies` returning is one thing the agent did, and drawing
+ * it as two doubles the length of every column for no information. The pairing
+ * is the tool call id both messages carry, so it holds even when an agent has
+ * several calls in flight.
+ *
+ * A result whose call was never seen keeps a step of its own rather than being
+ * dropped — a step with no call to attach to is still something that happened.
+ */
+function foldToolResults(steps: readonly TraceStep[]): TraceStep[] {
+  const callsById = new Map<string, TraceStep>();
+  const folded: TraceStep[] = [];
+
+  for (const step of steps) {
+    const call = step.resultFor ? callsById.get(step.resultFor) : undefined;
+
+    if (call) {
+      call.resultPreview = step.resultPreview;
+      call.outputPayload = step.outputPayload;
+      call.endTs = step.ts;
+      call.failed = step.failed;
+      continue;
+    }
+
+    folded.push(step);
+    if (step.callId) callsById.set(step.callId, step);
+  }
+
+  return folded;
 }
 
 /* ---------------------------------------------------------------- steps --- */
@@ -125,6 +209,8 @@ function stepsFromUpdate(envelope: StreamEnvelopeDTO): TraceStep[] {
 
   const steps: TraceStep[] = [];
 
+  const instanceKey = envelope.namespace[0] ?? namespaceAgent;
+
   for (const [nodeName, rawUpdate] of Object.entries(payload as Record<string, unknown>)) {
     const update = asNodeUpdate(rawUpdate);
     if (update === null) continue;
@@ -132,65 +218,117 @@ function stepsFromUpdate(envelope: StreamEnvelopeDTO): TraceStep[] {
     const messages = allMessages(update);
     if (messages.length === 0) continue;
 
-    // A `tools` node returns one message per tool call; each is its own step.
     messages.forEach((message, index) => {
-      const described = describeMessage(message, namespaceAgent);
-      if (!described) return;
-      steps.push({
-        key: `${envelope.seq}-${nodeName}-${index}`,
-        agentKey: namespaceAgent,
-        label: described.label,
-        detail: described.detail,
-        ts: envelope.ts,
-        failed: false,
-      });
+      for (const described of describeMessage(message, namespaceAgent)) {
+        steps.push({
+          ...described,
+          key: `${envelope.seq}-${nodeName}-${index}-${described.key}`,
+          agentKey: namespaceAgent,
+          instanceKey,
+          ts: envelope.ts,
+          endTs: null,
+        });
+      }
     });
   }
 
   return steps;
 }
 
-/** `null` for a message that carries nothing worth a row. */
-function describeMessage(
-  message: SerializedMessage,
-  agentKey: string,
-): { label: string; detail: string } | null {
+type DescribedStep = Omit<TraceStep, 'agentKey' | 'instanceKey' | 'ts' | 'endTs'>;
+
+/**
+ * What one message is worth, as steps — nothing at all for most of them.
+ *
+ * An agent's message with three tool calls is three steps, one per call, so
+ * each can later be paired with its own result. `detail` is the line a row has
+ * room for; `inputPayload` and `outputPayload` are the whole of what was sent
+ * and what came back, pretty-printed when they are JSON, which is what the
+ * graph reveals on demand.
+ */
+function describeMessage(message: SerializedMessage, agentKey: string): DescribedStep[] {
   const toolCalls = message.tool_calls ?? [];
 
   if (toolCalls.length > 0) {
-    const names = toolCalls.map((call) => call.name ?? 'tool');
+    return toolCalls.flatMap((call, index): DescribedStep[] => {
+      const name = call.name ?? 'tool';
 
-    const handoff = names.find((name) => name.startsWith('transfer_to_'));
-    if (handoff) {
-      const target = humanise(stripAgentSuffix(handoff.replace(/^transfer_to_/, '')));
-      return { label: `Delegate to ${target}`, detail: 'Handoff brief sent to the worker.' };
-    }
+      // The return leg is bookkeeping: the worker is finished, which the run
+      // says anyway by going back to the supervisor.
+      if (name.startsWith('transfer_back_to_')) return [];
 
-    // The return leg is bookkeeping, not a step the operator needs to read.
-    if (names.every((name) => name.startsWith('transfer_back_to_'))) return null;
+      const base = {
+        key: `call-${index}`,
+        detail: summariseArgs([call]),
+        resultPreview: '',
+        inputPayload: formatCalls([call]),
+        outputPayload: '',
+        callId: call.id ?? '',
+        resultFor: '',
+        targetKey: '',
+        failed: false,
+      };
 
-    return {
-      label:
-        names.length === 1 ? `Call ${humanise(names[0] ?? 'tool')}` : `Call ${names.length} tools`,
-      detail: summariseArgs(toolCalls),
-    };
+      if (name.startsWith('transfer_to_')) {
+        const target = name.replace(/^transfer_to_/, '');
+        return [
+          {
+            ...base,
+            kind: 'delegation' as const,
+            // Relabelled against the roster once the labels are known, so the
+            // connection and the column it lands on say the same name.
+            label: `Delegate to ${humanise(stripAgentSuffix(target))}`,
+            targetKey: target,
+            // The brief is the whole of a handoff; there is no result to wait for.
+            callId: '',
+          },
+        ];
+      }
+
+      return [{ ...base, kind: 'tool' as const, label: humanise(name) }];
+    });
   }
 
   if (message.type === 'tool') {
     const toolName = typeof message.name === 'string' ? message.name : 'tool';
-    if (toolName.startsWith('transfer_to_') || toolName.startsWith('transfer_back_to_')) {
-      return null;
-    }
-    return {
-      label: `${humanise(toolName)} returned`,
-      detail: truncate(flattenContent(message.content)),
-    };
+    if (toolName.startsWith('transfer_to_') || toolName.startsWith('transfer_back_to_')) return [];
+
+    const returned = flattenContent(message.content);
+    return [
+      {
+        key: 'result',
+        kind: 'tool',
+        label: humanise(toolName),
+        detail: '',
+        resultPreview: truncate(returned),
+        inputPayload: '',
+        outputPayload: formatPayload(returned),
+        callId: '',
+        resultFor: typeof message.tool_call_id === 'string' ? message.tool_call_id : '',
+        targetKey: '',
+        failed: message.status === 'error',
+      },
+    ];
   }
 
   const text = flattenContent(message.content);
-  if (!text) return null;
+  if (!text) return [];
 
-  return { label: `${humanise(stripAgentSuffix(agentKey))} reported`, detail: truncate(text) };
+  return [
+    {
+      key: 'report',
+      kind: 'report',
+      label: `${humanise(stripAgentSuffix(agentKey))} reported`,
+      detail: truncate(text),
+      resultPreview: '',
+      inputPayload: '',
+      outputPayload: text,
+      callId: '',
+      resultFor: '',
+      targetKey: '',
+      failed: false,
+    },
+  ];
 }
 
 export function stripAgentSuffix(value: string): string {
@@ -218,6 +356,42 @@ export function summariseArgs(calls: readonly { args?: Record<string, unknown> }
   return pairs.join(' · ');
 }
 
+/** Every call in the message, with its arguments as they were sent. */
+export function formatCalls(calls: readonly { name?: string; args?: Record<string, unknown> }[]): string {
+  return calls
+    .map((call) => {
+      const name = call.name ?? 'tool';
+      const args = call.args ?? {};
+      return Object.keys(args).length === 0 ? `${name}()` : `${name}\n${indent(args)}`;
+    })
+    .join('\n\n');
+}
+
+/**
+ * A tool's return, laid out.
+ *
+ * Tools answer in JSON, and a run's worth of it on one line is unreadable —
+ * but a tool that answers in prose must not be mangled into quotes, so the
+ * text is only reformatted when it actually parses.
+ */
+export function formatPayload(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed.startsWith('{') && !trimmed.startsWith('[')) return trimmed;
+  try {
+    return indent(JSON.parse(trimmed));
+  } catch {
+    return trimmed;
+  }
+}
+
+function indent(value: unknown): string {
+  try {
+    return JSON.stringify(value, null, 2) ?? String(value);
+  } catch {
+    return String(value);
+  }
+}
+
 /* ----------------------------------------------------------------- rows --- */
 
 function toRow(args: {
@@ -227,7 +401,15 @@ function toRow(args: {
   agentLabel: string;
 }): TraceRowVM {
   const { step, previousTs, state, agentLabel } = args;
-  const elapsed = previousTs === null ? null : Math.max(step.ts - previousTs, 0);
+
+  // A tool use times itself, from the call to the result. Everything else can
+  // only be timed against the step before it.
+  const elapsed =
+    step.endTs !== null
+      ? Math.max(step.endTs - step.ts, 0)
+      : previousTs === null
+        ? null
+        : Math.max(step.ts - previousTs, 0);
 
   const tone: Tone =
     state === 'failed' ? 'red' : state === 'active' ? 'blue' : state === 'done' ? 'green' : 'neutral';
@@ -235,8 +417,14 @@ function toRow(args: {
   return {
     key: step.key,
     label: step.label,
+    kind: step.kind,
+    agentKey: step.agentKey,
+    instanceKey: step.instanceKey,
     agentLabel,
     detail: step.detail,
+    resultPreview: step.resultPreview,
+    inputPayload: step.inputPayload,
+    outputPayload: step.outputPayload,
     durationLabel: elapsed === null ? '' : `${elapsed.toFixed(2)}s`,
     state,
     tone,
@@ -250,6 +438,8 @@ function resolveState(
   input: TraceInput,
 ): TraceStepState {
   if (step.failed) return 'failed';
+  // A call still waiting on its result is working, wherever it sits in the run.
+  if (step.callId && step.endTs === null) return input.running ? 'active' : 'done';
   if (index < total - 1) return 'done';
   return input.running ? 'active' : 'done';
 }
@@ -273,7 +463,7 @@ function buildMetaLabel(
 /* ----------------------------------------------------------- vocabulary --- */
 
 function buildAgentLabels(agents: readonly AgentInfoDTO[]): Map<string, string> {
-  const labels = new Map<string, string>([['supervisor', 'Supervisor']]);
+  const labels = new Map<string, string>([[SUPERVISOR_KEY, 'Supervisor']]);
   for (const agent of agents) {
     const label = agent.title.replace(/\s*agent$/i, '').trim() || humanise(agent.name);
     labels.set(agent.name, label);
@@ -282,6 +472,27 @@ function buildAgentLabels(agents: readonly AgentInfoDTO[]): Map<string, string> 
     labels.set(normaliseAgentKey(agent.name), label);
   }
   return labels;
+}
+
+/**
+ * The name to put on a worker.
+ *
+ * Namespaces spell an agent `User_Profiling_Agent` and its handoff tool spells
+ * it `user_profiling_agent`, so the roster is matched without regard to case.
+ * With no roster to consult — the health call has not landed yet, or the run
+ * woke an agent the roster does not list — the key itself reads well enough
+ * once the `_agent` suffix is off.
+ */
+function labelFor(labels: ReadonlyMap<string, string>, agentKey: string): string {
+  const direct = labels.get(agentKey);
+  if (direct) return direct;
+
+  const lowered = agentKey.toLowerCase();
+  for (const [key, label] of labels) {
+    if (key.toLowerCase() === lowered) return label;
+  }
+
+  return humanise(stripAgentSuffix(agentKey));
 }
 
 /** `["new_joiners_agent:9f2c41", "tools:2"]` -> `new_joiners_agent`. */
@@ -296,11 +507,41 @@ function normaliseAgentKey(value: string): string {
   return value.trim();
 }
 
-/** `lookup_new_joiner` -> `Lookup new joiner`. */
+/**
+ * The agents whose registered names read as jargon in the trace.
+ *
+ * The rename is presentational only — the graph's own vocabulary is what the
+ * envelopes carry, and matching on it anywhere else would be matching on a
+ * label rather than on a fact.
+ *
+ * There is no `sod test` -> `Policy Evaluation` rule, though the roster once
+ * needed one: the mesh now runs a `Policy_Evaluation_Agent` of its own, and
+ * renaming the SOD agent onto it would put two different workers on the graph
+ * under one name.
+ */
+const DISPLAY_RENAMES: readonly (readonly [RegExp, string])[] = [
+  [/identities/gi, 'User Profiling'],
+];
+
+/** A step or agent label, in the words the operator uses. */
+export function toDisplayLabel(value: string): string {
+  return DISPLAY_RENAMES.reduce((text, [pattern, replacement]) => text.replace(pattern, replacement), value);
+}
+
+/** Names the mesh uses that are initialisms, not words. */
+const ACRONYMS = new Set(['sod', 'sap', 'hr', 'mcp', 'api', 'id', 'sla']);
+
+/** `lookup_new_joiner` -> `Lookup new joiner`; `list_sod_rules` -> `List SOD rules`. */
 export function humanise(value: string): string {
   const spaced = value.replace(/[_-]+/g, ' ').replace(/([a-z])([A-Z])/g, '$1 $2').trim();
   if (!spaced) return value;
-  return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+
+  const words = spaced
+    .split(' ')
+    .map((word) => (ACRONYMS.has(word.toLowerCase()) ? word.toUpperCase() : word));
+
+  const [first = '', ...rest] = words;
+  return [first.charAt(0).toUpperCase() + first.slice(1), ...rest].join(' ');
 }
 
 /* ------------------------------------------------------------- coercion --- */

@@ -50,7 +50,7 @@ export async function fetchHealth(signal?: AbortSignal): Promise<HealthDTO> {
 /** `GET /agents` — the worker roster with the tools MCP actually yielded. */
 export async function fetchAgents(signal?: AbortSignal): Promise<AgentInfoDTO[]> {
   const response = await httpClient.get<AgentInfoDTO[]>('/agents', { signal });
-  return response.data;
+  return response.data.filter((agent) => agent.name !== 'Identities_Agent' && agent.name !== 'SOD_Test_Agent');
 }
 
 /** `GET /agents/mcp` — per-server connectivity. */

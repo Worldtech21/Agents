@@ -1,3 +1,4 @@
+import { toDisplayLabel } from '@bff/mappers/trace.mapper';
 import { TONE_VARIABLE } from '@bff/tone';
 import type { TraceRowVM } from '@bff/viewmodels';
 import { Skeleton } from '@presentation/atoms/Skeleton';
@@ -33,11 +34,17 @@ export function TraceRow({ row, isLast }: { row: TraceRowVM; isLast: boolean }) 
       </div>
       <div className={styles.traceBody}>
         <div className={styles.traceHeader}>
-          <span className={labelClass}>{row.label}</span>
+          <span className={labelClass}>{toDisplayLabel(row.label)}</span>
           {row.durationLabel ? <span className={styles.traceMs}>{row.durationLabel}</span> : null}
         </div>
-        <span className={styles.traceAgent}>{row.agentLabel}</span>
+        <span className={styles.traceAgent}>{toDisplayLabel(row.agentLabel)}</span>
         {row.detail ? <span className={styles.traceDetail}>{row.detail}</span> : null}
+        {/* One row per tool use, so the row carries the return as well as the call. */}
+        {row.resultPreview ? (
+          <span className={[styles.traceDetail, styles.traceResult].join(' ')}>
+            {row.resultPreview}
+          </span>
+        ) : null}
       </div>
     </div>
   );

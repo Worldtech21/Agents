@@ -21,7 +21,7 @@ COPY src ./src
 # Baked into the bundle at build time.  The defaults mirror .env.example; the
 # empty base URL is what keeps requests same-origin for the nginx stage below.
 # Override with --build-arg only when the API is reached on its own hostname.
-ARG VITE_API_BASE_URL=""
+ARG VITE_API_BASE_URL="http://34.120.8.80/access-advisor-middleware"
 ARG VITE_API_PREFIX=/api/v1
 ARG VITE_API_TIMEOUT_MS=30000
 ARG VITE_STREAM_MODES=updates,messages,custom
@@ -30,8 +30,17 @@ ENV VITE_API_BASE_URL=$VITE_API_BASE_URL \
     VITE_API_TIMEOUT_MS=$VITE_API_TIMEOUT_MS \
     VITE_STREAM_MODES=$VITE_STREAM_MODES
 
-RUN npm run build
+# Where the bundle expects to be served from. Vite writes absolute asset URLs
+# into index.html, so this has to be decided at build time — "/" is right for
+# compose and for any host that serves this app at its root, but on a shared
+# ingress that already has something at "/" the app needs its own prefix or its
+# /assets requests land on the other app (k8s: --build-arg VITE_BASE=/access-advisor/,
+# paired with VITE_API_BASE_URL=/access-advisor). Trailing slash is required.
+ARG VITE_BASE=/access-advisor-front-end/
 
+RUN npm run build -- --base="$VITE_BASE"
+# CMD ["npm", "run", "dev"]
+# -- --base="$VITE_BASE"
 
 FROM nginxinc/nginx-unprivileged:1.27-alpine
 
@@ -45,7 +54,7 @@ USER 101
 # NGINX_ENTRYPOINT_LOCAL_RESOLVERS makes the entrypoint publish the pod's own
 # nameservers as $NGINX_LOCAL_RESOLVERS, which the /api block needs; the filter
 # limits substitution to those two names so nginx's own $variables survive.
-ENV BACKEND_ORIGIN=http://access-advisor-api:8000 \
+ENV BACKEND_ORIGIN=http://34.120.8.80/access-advisor-middleware \
     NGINX_ENTRYPOINT_LOCAL_RESOLVERS=1 \
     NGINX_ENVSUBST_FILTER=^(BACKEND_ORIGIN|NGINX_LOCAL_RESOLVERS)
 COPY nginx.conf.template /etc/nginx/templates/default.conf.template

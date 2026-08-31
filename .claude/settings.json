@@ -41,7 +41,10 @@
       "Bash(docker compose *)",
       "Bash(git checkout *)",
       "Bash(timeout 540 docker compose build api)",
-      "Bash(timeout 540 docker compose build web)"
+      "Bash(timeout 540 docker compose build web)",
+      "Bash(command -v nginx docker)",
+      "Bash(sed -e 's|${NGINX_LOCAL_RESOLVERS}|127.0.0.11|' -e 's|${BACKEND_ORIGIN}|http://backend:8000|' nginx.conf.template)",
+      "Bash(timeout 120 docker run --rm -v /tmp/claude-1000/-home-yuvraj-anand-Agents/f93281ad-6d66-41d3-a349-52cc5cd5548f/scratchpad/default.conf:/etc/nginx/conf.d/default.conf:ro nginx:alpine nginx -t)"
     ]
   }
 }

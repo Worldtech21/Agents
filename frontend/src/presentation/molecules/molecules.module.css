@@ -418,6 +418,20 @@
   overflow-wrap: anywhere;
 }
 
+/* The second half of a tool use: what came back from what the line above sent. */
+.traceResult {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--ink-80);
+}
+
+.traceResult::before {
+  content: '→ ';
+  color: var(--ink-48);
+}
+
 /* ----------------------------------------------------------- chat bubble --- */
 
 .chatTurn {
@@ -934,4 +948,585 @@
   justify-content: flex-end;
   gap: 8px;
   padding-top: 4px;
+}
+
+/* -------------------------------------------------- execution flow nodes --- */
+
+/*
+ * Every node on the execution graph is this card.
+ *
+ * Two variables are set inline on it and they do different jobs. `--lane` is
+ * what the node *is* and never changes: it owns the frame, the fill, the icon
+ * and the number. `--tone` is what the run is *doing* and changes underneath:
+ * it owns the dot, the status word and the ring on the card that is working.
+ * Keeping them separate is what lets a card be recognisably a policy agent
+ * whether it is queued, running or finished.
+ */
+.flowCard {
+  box-sizing: border-box;
+  width: 300px;
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1.5px solid color-mix(in srgb, var(--lane, var(--hairline)) 52%, var(--hairline));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--lane, var(--card)) 6%, var(--card));
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  font-family: var(--font-text);
+  color: var(--ink);
+  text-align: left;
+  cursor: default;
+}
+
+/* The card holding the turn. The ring is the tone's, not the lane's — it is
+   the one thing on the card that answers "is this happening now?". */
+.flowCard[data-state='active'] {
+  border-color: var(--tone);
+  box-shadow: 0 0 0 3px var(--tint), 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.flowCard[data-state='failed'] {
+  border-color: var(--red);
+}
+
+/* Drawn, but not yet earned: the architecture is visible before the run
+   reaches it, without the drawing claiming work that has not happened. */
+.flowCard[data-state='idle'] {
+  opacity: 0.62;
+}
+
+.flowCardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+  flex: 1;
+}
+
+.flowCardHead {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+/* The lane's own mark, which is how a card is identified at a zoom level where
+   its wording has stopped being legible. */
+.flowGlyph {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--lane) 14%, var(--card));
+  color: var(--lane);
+}
+
+/* Where this node falls in the run's numbering — `1`, `5`, `5.2`. */
+.flowOrder {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 19px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 6px;
+  background: var(--lane, var(--ink-48));
+  color: var(--canvas);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.flowCardName {
+  min-width: 0;
+  /* Takes the slack so the state dot settles against the right edge. */
+  flex: 1;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: var(--track-14);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* What the roster says the worker is for, and what the spine nodes are for —
+   two lines, because a role that elides to one word explains nothing. */
+.flowRole,
+.flowMeta {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 11.5px;
+  line-height: 1.4;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+}
+
+.flowStatus {
+  flex: none;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: var(--track-12);
+  color: var(--tone, var(--ink-48));
+}
+
+.flowCaption {
+  font-size: 11px;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+}
+
+/* ---------------------------------------------------------------- spine --- */
+
+.flowTerminal,
+.flowBuilder {
+  align-items: center;
+}
+
+/* -------------------------------------------------------- supervisor --- */
+
+.flowRoot {
+  width: 320px;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border-width: 2px;
+  border-radius: 16px;
+}
+
+.flowRootHead {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.flowRootName {
+  min-width: 0;
+  flex: 1;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: var(--track-14);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* What the supervisor is for. Fixed between runs on purpose: it is the one
+   part of the drawing that states the design rather than the run. */
+.flowDuties {
+  margin: 0;
+  padding: 0 0 0 15px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  letter-spacing: var(--track-12);
+  color: var(--ink-80);
+}
+
+.flowDuties li {
+  position: relative;
+}
+
+.flowDuties li::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 6px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--lane);
+}
+
+.flowRootFoot,
+.flowAgentFoot {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  justify-content: space-between;
+  min-width: 0;
+  padding-top: 8px;
+  border-top: 1px solid color-mix(in srgb, var(--lane) 18%, var(--hairline));
+}
+
+.flowAgentFoot {
+  margin-top: 2px;
+}
+
+.flowAgent {
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Which visit to this agent the node is — only ever drawn when there is more
+   than one, so the graph never says "1st call" on its own. */
+.flowVisit {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  height: 16px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  background: var(--tone, var(--ink-48));
+  color: var(--canvas);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+/* ----------------------------------------------------------------- tool --- */
+
+/* A tool is subordinate to the agent that called it, and is not an agent — the
+   dashed frame says so, and is the same frame the key names. */
+.flowStep {
+  position: relative;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border-style: dashed;
+  border-radius: 12px;
+}
+
+.flowStepHead {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+/* The tool's glyph is smaller than an agent's: it is a step, not an actor. */
+.flowStepHead .flowGlyph {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+}
+
+.flowStepName {
+  min-width: 0;
+  flex: 1;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.flowStepMs {
+  flex: none;
+  font-size: 11px;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+}
+
+/* Two lines of the step's own words; the panel behind it carries the rest. */
+.flowDetail {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 11.5px;
+  line-height: 1.4;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+  overflow-wrap: anywhere;
+}
+
+/* What a tool returned, under what it was called with. The arrow is what
+   separates the two without a second label taking up a line. */
+.flowResult {
+  color: var(--ink-80);
+}
+
+.flowResult::before {
+  content: '→ ';
+  color: var(--lane, var(--ink-48));
+}
+
+/* A step whose payload can be opened. The pointer is the whole affordance,
+   with the caret beside the label saying which way it will go. */
+.flowStepOpenable {
+  cursor: pointer;
+}
+
+.flowStepOpenable:hover,
+.flowStepOpenable:focus-visible {
+  border-color: var(--lane);
+  border-style: solid;
+  outline: none;
+}
+
+.flowStepOpenable[data-open='true'] {
+  border-color: var(--lane);
+  border-style: solid;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--lane) 14%, transparent);
+}
+
+.flowStepCaret {
+  flex: none;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--ink-48);
+}
+
+/* What the step actually returned, hung under the card rather than grown into
+   it: the graph's rows are laid out on fixed centres, and a card that grew
+   would push its own chain apart every time somebody opened one. */
+.flowOutput {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 340px;
+  max-height: 260px;
+  overflow: auto;
+  padding: 10px 12px;
+  border: 1px solid var(--hairline);
+  border-radius: 12px;
+  background: var(--card);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  cursor: auto;
+}
+
+/* "Sent" / "Returned" — the panel holds both halves of one tool use. */
+.flowOutputLabel {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--ink-48);
+}
+
+.flowOutputText + .flowOutputLabel {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--hairline);
+}
+
+.flowOutputText {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  line-height: 1.5;
+  letter-spacing: 0;
+  color: var(--ink-80);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ---------------------------------------------------------------- edges --- */
+
+/*
+ * A line's own name, riding on the line.
+ *
+ * Set in mono because these are identifiers — `transfer_to_policy_agent` is
+ * what the graph calls the edge, not a description of it, and typesetting it
+ * as prose would quietly turn one into the other. The backing is the canvas
+ * rather than a card: the label interrupts its line, it does not sit on a chip
+ * beside it.
+ */
+.flowEdgeLabel {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  max-width: 260px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: var(--parchment);
+  font-family: var(--font-mono);
+  line-height: 16px;
+  pointer-events: all;
+  cursor: default;
+}
+
+.flowEdgeLabel[data-state='idle'] {
+  opacity: 0.5;
+}
+
+.flowEdgeIndex {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 5px;
+  background: var(--lane, var(--ink-48));
+  color: var(--canvas);
+  font-family: var(--font-text);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+}
+
+.flowEdgeNote {
+  min-width: 0;
+  font-size: 10.5px;
+  letter-spacing: 0;
+  color: var(--lane, var(--ink-80));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.flowLoopLabel {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+/* The call and the result, named where they run. */
+.flowStrandLabels {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  gap: 26px;
+  align-items: center;
+  pointer-events: none;
+}
+
+.flowStrandLabel {
+  padding: 1px 5px;
+  border-radius: 5px;
+  background: var(--parchment);
+  font-family: var(--font-text);
+  font-size: 10px;
+  letter-spacing: var(--track-12);
+  color: var(--lane, var(--ink-48));
+  white-space: nowrap;
+}
+
+/* A result that has not come back yet is named, and visibly still pending. */
+.flowStrandLabel[data-pending='true'] {
+  color: var(--ink-48);
+  opacity: 0.7;
+}
+
+.flowStrandRunning {
+  animation: flowDash 1s linear infinite;
+}
+
+@keyframes flowDash {
+  to {
+    stroke-dashoffset: -18;
+  }
+}
+
+/* ---------------------------------------------------------------- title --- */
+
+.flowHeading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 640px;
+  text-align: center;
+  pointer-events: none;
+}
+
+.flowHeadingTitle {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: var(--track-17);
+  color: var(--ink);
+}
+
+.flowHeadingSub {
+  font-size: 12px;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+}
+
+/* ------------------------------------------------------------------ key --- */
+
+/* Part of the drawing rather than an overlay on it, so a panned or exported
+   view still explains its own colours. */
+.flowKey {
+  box-sizing: border-box;
+  width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid var(--hairline);
+  border-radius: 14px;
+  background: var(--card);
+  font-family: var(--font-text);
+  cursor: default;
+}
+
+.flowKeyTitle {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: var(--track-12);
+  color: var(--ink);
+}
+
+.flowKeyList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* The node-type key is long enough that one column would be taller than the
+   drawing it belongs to. */
+.flowKeyWide {
+  width: 420px;
+}
+
+.flowKeyGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 18px;
+}
+
+.flowKeyRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.flowKeyLine {
+  flex: none;
+}
+
+/* The same frame the cards wear, at the size of a bullet. */
+.flowKeySwatch {
+  flex: none;
+  width: 22px;
+  height: 14px;
+  border: 1.5px solid var(--lane);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--lane) 12%, var(--card));
+}
+
+.flowKeySwatchTool {
+  border-style: dashed;
+}
+
+.flowKeyLabel {
+  min-width: 0;
+  font-size: 11px;
+  letter-spacing: var(--track-12);
+  color: var(--ink-80);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }

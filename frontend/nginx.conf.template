@@ -12,6 +12,18 @@ server {
     real_ip_header X-Forwarded-For;
     set_real_ip_from 0.0.0.0/0;
 
+    # No cap on the request body: 0 disables the check entirely, so uploads are
+    # bounded by the backend and by disk, not by nginx.
+    client_max_body_size 0;
+    client_body_buffer_size 1m;
+
+    # A slow client on a huge upload must not be reaped mid-transfer.  These are
+    # per-read/write idle timeouts, not wall-clock budgets for the request.
+    client_body_timeout 1d;
+    client_header_timeout 1d;
+    send_timeout 1d;
+    keepalive_timeout 1d;
+
     gzip on;
     gzip_min_length 1024;
     gzip_proxied any;
@@ -57,8 +69,14 @@ server {
         proxy_set_header Connection "";
         proxy_buffering off;
         proxy_cache off;
-        proxy_read_timeout 1h;
-        proxy_send_timeout 1h;
+        proxy_connect_timeout 1h;
+        proxy_read_timeout 1d;
+        proxy_send_timeout 1d;
+
+        # Stream the body straight through instead of spooling the whole upload
+        # to a temp file before the backend sees a single byte.
+        proxy_request_buffering off;
+        client_max_body_size 0;
     }
 
     # Routing is client-side, so unknown paths fall back to the shell.

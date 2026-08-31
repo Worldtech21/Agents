@@ -104,7 +104,13 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(0px, 26vw, 344px);
+  grid-template-columns: minmax(0, 1fr) clamp(0px, 26vw, 800px);
+}
+
+/* While a run is in flight the graph is the only thing on screen, so the
+   trace column collapses and it gets the full width to draw in. */
+.reportGridSolo {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 @media (max-width: 1024px) {
@@ -117,6 +123,21 @@
   min-width: 0;
   overflow: auto;
   padding: 28px 32px 64px;
+}
+
+/* The graph, holding the whole screen while a run is in flight. React Flow
+   sizes itself to its parent, so the height has to come from here: as the sole
+   row of a stretched grid it takes the pane, inset by the same gutter the
+   report uses so the run does not sit flush against the chrome. `min-height: 0`
+   keeps a wide drawing from pushing the row past the viewport. */
+.traceFlow {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  /* margin: 28px 32px; */
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  overflow: hidden;
 }
 
 .cardStack {

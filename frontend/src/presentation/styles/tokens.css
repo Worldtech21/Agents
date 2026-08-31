@@ -33,6 +33,22 @@
 
   --selection: rgba(0, 102, 204, 0.16);
   --skeleton: rgba(0, 0, 0, 0.055);
+
+  /* Diagram lanes.
+
+     The rest of the interface colours by meaning — risk, run state, outcome —
+     and four tones are enough for that. The execution graph needs something
+     the tone scale cannot give it: a hue per *role*, held for the whole
+     drawing, so a card, the line leaving it and its entry in the key are
+     recognisably one thing. These are that hue set, and they are used nowhere
+     else. Fills are mixed from them at paint time rather than stored twice. */
+  --lane-violet: #7c4ddb;
+  --lane-blue: #2563d9;
+  --lane-green: #1a9150;
+  --lane-teal: #0d8f86;
+  --lane-rose: #d93a5b;
+  --lane-orange: #d97316;
+  --lane-slate: #6b7280;
 }
 
 [data-theme='dark'] {
@@ -61,6 +77,16 @@
 
   --selection: rgba(41, 151, 255, 0.22);
   --skeleton: rgba(255, 255, 255, 0.06);
+
+  /* Lifted off the black ground: the same six hues, at the luminance a dark
+     canvas needs to keep them apart from each other. */
+  --lane-violet: #a78bfa;
+  --lane-blue: #5aa9ff;
+  --lane-green: #4ade80;
+  --lane-teal: #2dd4bf;
+  --lane-rose: #fb7185;
+  --lane-orange: #fb923c;
+  --lane-slate: #9ca3af;
 }
 
 /* Radii and type ramp, factored out of the design's inline styles. */

@@ -45,6 +45,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         ),
         lifespan=lifespan,
         debug=settings.debug,
+        root_path=settings.root_path
     )
 
     application.add_middleware(

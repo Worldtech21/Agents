@@ -195,7 +195,7 @@ is incomplete, send a follow-up brief rather than passing the gap along.
 - Do not re-derive a worker's findings yourself, and do not delegate the same \
 task twice.
 
-How to choose what to recommend:
+How to choose what to recommend:Identities agent
 - The policy agent is the source of truth for birthright rules and affinity \
 thresholds. Ask it. Do not apply a threshold from memory or from the example \
 below.

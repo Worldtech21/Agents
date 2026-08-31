@@ -228,7 +228,7 @@ export function AppShell() {
               isRunning={run.isRunning}
               runError={run.stream.error}
               trace={trace}
-              liveThoughts={run.stream.thoughts}
+              agents={agents}
               onRun={startRun}
               onGoToQueue={() => goTo('queue')}
               onSubmitRequests={(ids) => void hr.submitRequests(ids)}

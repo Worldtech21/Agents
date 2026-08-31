@@ -25,7 +25,10 @@ export type IconName =
   | 'user'
   | 'inbox'
   | 'history'
-  | 'checkCircle';
+  | 'checkCircle'
+  | 'robot'
+  | 'wrench'
+  | 'document';
 
 const PATHS: Record<IconName, readonly string[]> = {
   queue: ['M4 7h16M4 12h16M4 17h10'],
@@ -48,6 +51,17 @@ const PATHS: Record<IconName, readonly string[]> = {
   inbox: ['M3 13h5l1.5 3h5L16 13h5', 'M5.5 5h13l2.5 8v6H3v-6L5.5 5Z'],
   history: ['M12 7v5l3.5 2', 'M20 12a8 8 0 1 1-2.6-5.9', 'M20 4v5h-5'],
   checkCircle: ['M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0', 'm8.5 12 2.5 2.5 4.5-5'],
+  // The execution graph's three glyphs: an agent, a tool it calls, and the
+  // document a run ends in.
+  robot: [
+    'M12 3v3',
+    'M6.5 6.5h11A2.5 2.5 0 0 1 20 9v7.5a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 16.5V9a2.5 2.5 0 0 1 2.5-2.5Z',
+    'M9.5 11.5v2M14.5 11.5v2',
+  ],
+  wrench: [
+    'M15.5 3.5a5 5 0 0 0-5.9 6.4l-6 6a1.8 1.8 0 0 0 2.5 2.5l6-6a5 5 0 0 0 6.4-5.9l-3 3-2.5-.5-.5-2.5 3-3Z',
+  ],
+  document: ['M6 3h9l4 4v14H6zM15 3v4h4', 'M9 12h7M9 16h5'],
 };
 
 export interface IconProps {

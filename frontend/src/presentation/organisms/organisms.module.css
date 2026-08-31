@@ -621,3 +621,148 @@
   text-wrap: pretty;
   animation: rise 0.22s ease;
 }
+
+/* ----------------------------------------------------- agent run graph --- */
+
+.flowOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3vh 3vw;
+  background: rgba(0, 0, 0, 0.42);
+  animation: rise 0.16s ease-out;
+}
+
+.flowDialog {
+  display: flex;
+  flex-direction: column;
+  width: min(1180px, 100%);
+  height: min(840px, 100%);
+  min-height: 0;
+  overflow: hidden;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  background: var(--canvas);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+}
+
+.flowHead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+  padding: 18px 20px 14px;
+  border-bottom: 1px solid var(--divider);
+}
+
+.flowTitle {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: var(--track-17);
+}
+
+.flowRunState {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  letter-spacing: var(--track-12);
+}
+
+.flowClose {
+  margin-left: auto;
+  flex: none;
+}
+
+.flowCanvas {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  background: var(--parchment);
+  /* React Flow reads its dot grid from this variable; pointing it at the
+     design's hairline is what makes the canvas theme with everything else. */
+  --xy-background-pattern-color: var(--hairline);
+}
+
+/* The graph is read-only, so the connection handles exist only to anchor an
+   edge — they are never a target for the pointer. */
+.flowCanvas :global(.react-flow__handle) {
+  width: 1px;
+  height: 1px;
+  min-width: 0;
+  min-height: 0;
+  border: none;
+  background: transparent;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.flowCanvas :global(.react-flow__background) circle {
+  fill: var(--hairline);
+}
+
+/* Arrowheads for the tool strands, which are drawn by hand and so get none
+   from React Flow. The element exists only to hold `<defs>`; markers resolve
+   by id across every SVG in the document, so it never needs to be visible. */
+.flowDefs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+.flowCanvas :global(.react-flow__attribution) {
+  background: transparent;
+  font-size: 10px;
+}
+
+.flowCanvas :global(.react-flow__attribution a) {
+  color: var(--ink-48);
+}
+
+.flowControls {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 5;
+  display: flex;
+  gap: 6px;
+}
+
+.flowEmpty {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 22%;
+  margin: 0 auto;
+  max-width: 400px;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.5;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+  pointer-events: none;
+}
+
+.flowFoot {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+  padding: 14px 20px;
+  border-top: 1px solid var(--divider);
+}
+
+.flowFootMeta {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  letter-spacing: var(--track-12);
+  color: var(--ink-48);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

@@ -13,10 +13,10 @@ const SUPERVISOR_KEY = 'supervisor';
 
 /** `new_joiners_agent` -> `New Joiners`, matching the design's short labels. */
 export function humaniseAgentName(agent: AgentInfoDTO): string {
-  const fromTitle = agent.title.replace(/\s*agent$/i, '').trim();
+  const fromTitle = agent.title.trim();
   if (fromTitle) return fromTitle;
   return agent.name
-    .replace(/_agent$/i, '')
+    // .replace(/_agent$/i, '')
     .split('_')
     .map((word) => (word ? word.charAt(0).toUpperCase() + word.slice(1) : word))
     .join(' ');

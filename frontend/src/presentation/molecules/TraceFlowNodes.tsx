@@ -414,42 +414,42 @@ const EDGE_KEY: ReadonlyArray<{
   { label: 'Tool result / data returned', lane: 'analysis', dashed: true, arrow: 'start' },
 ];
 
-export function TraceLegendNode() {
-  return (
-    <div className={styles.flowKey}>
-      <span className={styles.flowKeyTitle}>Legend</span>
-      <ul className={styles.flowKeyList}>
-        {EDGE_KEY.map((entry) => (
-          <li key={entry.label} className={styles.flowKeyRow}>
-            <svg
-              className={styles.flowKeyLine}
-              viewBox="0 0 46 10"
-              width="46"
-              height="10"
-              aria-hidden="true"
-              style={{ color: LANE_VARIABLE[entry.lane] }}
-            >
-              <line
-                x1={entry.arrow === 'end' ? 1 : 9}
-                y1="5"
-                x2={entry.arrow === 'end' ? 37 : 45}
-                y2="5"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeDasharray={entry.dashed ? '4 3' : undefined}
-              />
-              <path
-                d={entry.arrow === 'end' ? 'M37 1.5 45 5l-8 3.5z' : 'M9 1.5 1 5l8 3.5z'}
-                fill="currentColor"
-              />
-            </svg>
-            <span className={styles.flowKeyLabel}>{entry.label}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
+// export function TraceLegendNode() {
+//   return (
+//     <div className={styles.flowKey}>
+//       <span className={styles.flowKeyTitle}>Legend</span>
+//       <ul className={styles.flowKeyList}>
+//         {EDGE_KEY.map((entry) => (
+//           <li key={entry.label} className={styles.flowKeyRow}>
+//             <svg
+//               className={styles.flowKeyLine}
+//               viewBox="0 0 46 10"
+//               width="46"
+//               height="10"
+//               aria-hidden="true"
+//               style={{ color: LANE_VARIABLE[entry.lane] }}
+//             >
+//               <line
+//                 x1={entry.arrow === 'end' ? 1 : 9}
+//                 y1="5"
+//                 x2={entry.arrow === 'end' ? 37 : 45}
+//                 y2="5"
+//                 stroke="currentColor"
+//                 strokeWidth="1.6"
+//                 strokeDasharray={entry.dashed ? '4 3' : undefined}
+//               />
+//               <path
+//                 d={entry.arrow === 'end' ? 'M37 1.5 45 5l-8 3.5z' : 'M9 1.5 1 5l8 3.5z'}
+//                 fill="currentColor"
+//               />
+//             </svg>
+//             <span className={styles.flowKeyLabel}>{entry.label}</span>
+//           </li>
+//         ))}
+//       </ul>
+//     </div>
+//   );
+// }
 
 const LANE_KEY: ReadonlyArray<{ readonly label: string; readonly lane: FlowLane }> = [
   { label: 'Input / output', lane: 'io' },
@@ -462,30 +462,30 @@ const LANE_KEY: ReadonlyArray<{ readonly label: string; readonly lane: FlowLane 
   { label: 'Recommendation builder', lane: 'builder' },
 ];
 
-export function TraceLaneKeyNode() {
-  return (
-    <div className={[styles.flowKey, styles.flowKeyWide].join(' ')}>
-      <span className={styles.flowKeyTitle}>Node types</span>
-      <ul className={[styles.flowKeyList, styles.flowKeyGrid].join(' ')}>
-        {LANE_KEY.map((entry) => (
-          <li key={entry.label} className={styles.flowKeyRow}>
-            <span
-              className={styles.flowKeySwatch}
-              style={{ '--lane': LANE_VARIABLE[entry.lane] } as CSSProperties}
-              aria-hidden="true"
-            />
-            <span className={styles.flowKeyLabel}>{entry.label}</span>
-          </li>
-        ))}
-        <li className={styles.flowKeyRow}>
-          <span
-            className={[styles.flowKeySwatch, styles.flowKeySwatchTool].join(' ')}
-            style={{ '--lane': LANE_VARIABLE.io } as CSSProperties}
-            aria-hidden="true"
-          />
-          <span className={styles.flowKeyLabel}>Tool / function</span>
-        </li>
-      </ul>
-    </div>
-  );
-}
+// export function TraceLaneKeyNode() {
+//   return (
+//     <div className={[styles.flowKey, styles.flowKeyWide].join(' ')}>
+//       <span className={styles.flowKeyTitle}>Node types</span>
+//       <ul className={[styles.flowKeyList, styles.flowKeyGrid].join(' ')}>
+//         {LANE_KEY.map((entry) => (
+//           <li key={entry.label} className={styles.flowKeyRow}>
+//             <span
+//               className={styles.flowKeySwatch}
+//               style={{ '--lane': LANE_VARIABLE[entry.lane] } as CSSProperties}
+//               aria-hidden="true"
+//             />
+//             <span className={styles.flowKeyLabel}>{entry.label}</span>
+//           </li>
+//         ))}
+//         <li className={styles.flowKeyRow}>
+//           <span
+//             className={[styles.flowKeySwatch, styles.flowKeySwatchTool].join(' ')}
+//             style={{ '--lane': LANE_VARIABLE.io } as CSSProperties}
+//             aria-hidden="true"
+//           />
+//           <span className={styles.flowKeyLabel}>Tool / function</span>
+//         </li>
+//       </ul>
+//     </div>
+//   );
+// }

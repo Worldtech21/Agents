@@ -732,6 +732,26 @@
   gap: 6px;
 }
 
+/* Pinned to the corners of the viewport, not the drawing, so they stay put
+   through pan and zoom instead of scrolling off with a deep run. */
+.flowLegendTopLeft,
+.flowLegendTopRight {
+  position: absolute;
+  top: 14px;
+  z-index: 5;
+  max-height: calc(100% - 28px);
+  overflow: auto;
+  pointer-events: none;
+}
+
+.flowLegendTopLeft {
+  left: 14px;
+}
+
+.flowLegendTopRight {
+  right: 14px;
+}
+
 .flowEmpty {
   position: absolute;
   left: 0;

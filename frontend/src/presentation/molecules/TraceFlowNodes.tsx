@@ -392,15 +392,14 @@ export function TraceTitleNode({ data }: NodeProps<TitleNode>) {
 /* ------------------------------------------------------------------- key --- */
 
 /*
- * The two keys, drawn as nodes rather than as an overlay.
+ * The two keys, drawn as a fixed overlay rather than as nodes.
  *
- * They belong to the drawing, not to the viewport: pan the graph and the key
- * travels with it, which is what makes an exported or screenshotted view
- * self-explanatory. It is also why they carry no state — nothing in a key is
- * ever queued or working.
+ * A key anchored to the drawing itself drifts out of view once the run grows
+ * a few columns deep — exactly when a reader most needs it. Pinning it to the
+ * viewport instead means it is always on screen, at the cost of no longer
+ * being self-explanatory in an exported or screenshotted view. It carries no
+ * state either way — nothing in a key is ever queued or working.
  */
-
-export type LegendNode = Node<Record<string, unknown>, 'legend'>;
 
 /** Each entry draws its own line, because the line *is* the thing being named. */
 const EDGE_KEY: ReadonlyArray<{
@@ -415,7 +414,7 @@ const EDGE_KEY: ReadonlyArray<{
   { label: 'Tool result / data returned', lane: 'analysis', dashed: true, arrow: 'start' },
 ];
 
-export function TraceLegendNode(_props: NodeProps<LegendNode>) {
+export function TraceLegendNode() {
   return (
     <div className={styles.flowKey}>
       <span className={styles.flowKeyTitle}>Legend</span>
@@ -452,8 +451,6 @@ export function TraceLegendNode(_props: NodeProps<LegendNode>) {
   );
 }
 
-export type LaneKeyNode = Node<Record<string, unknown>, 'laneKey'>;
-
 const LANE_KEY: ReadonlyArray<{ readonly label: string; readonly lane: FlowLane }> = [
   { label: 'Input / output', lane: 'io' },
   { label: 'Supervisor', lane: 'supervisor' },
@@ -465,7 +462,7 @@ const LANE_KEY: ReadonlyArray<{ readonly label: string; readonly lane: FlowLane 
   { label: 'Recommendation builder', lane: 'builder' },
 ];
 
-export function TraceLaneKeyNode(_props: NodeProps<LaneKeyNode>) {
+export function TraceLaneKeyNode() {
   return (
     <div className={[styles.flowKey, styles.flowKeyWide].join(' ')}>
       <span className={styles.flowKeyTitle}>Node types</span>

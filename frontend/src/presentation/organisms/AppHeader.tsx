@@ -45,9 +45,12 @@ export function AppHeader({
   showRunControl = true,
   viewActions,
 }: AppHeaderProps) {
+  // Enter in the id field reaches this via implicit submission. It has to
+  // re-check `disabled` itself: that guard used to be carried by the submit
+  // button, and the form no longer has one.
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (!isRunning) onRun();
+    if (!isRunning && !disabled) onRun();
   };
 
   return (
@@ -75,13 +78,27 @@ export function AppHeader({
               />
             </div>
 
+            {/* Distinct keys, and neither button is a submit: the two states
+                must never reconcile onto one DOM node. Sharing a node let a
+                click land on cancel, flip the reused node to `type="submit"`
+                during React's synchronous discrete-event flush, and then have
+                the browser submit the form — cancelling the run and starting
+                a fresh one on the same click. Enter still runs, via the
+                form's implicit submission. */}
             {isRunning ? (
-              <Button type="button" variant="primary" size="lg" busy onClick={onCancel}>
+              <Button key="cancel" type="button" variant="primary" size="lg" busy onClick={onCancel}>
                 <Icon name="spin" size={14} className={atoms.spinner} strokeWidth={1.8} />
                 Cancel run
               </Button>
             ) : (
-              <Button type="submit" variant="primary" size="lg" disabled={disabled}>
+              <Button
+                key="run"
+                type="button"
+                variant="primary"
+                size="lg"
+                disabled={disabled}
+                onClick={onRun}
+              >
                 <Icon name="play" size={14} fill="currentColor" strokeWidth={1.8} />
                 Run recommendation
               </Button>

@@ -17,7 +17,9 @@
  * supervisor and a line back to it. An agent called twice therefore gets two
  * branches rather than one node holding two conversations that never met. The
  * supervisor's own rows never become a branch: its delegations are the lines,
- * and its final answer is the report on the page.
+ * and its final answer is the report on the page. A `transfer_to_…` call is
+ * therefore never a step either, whichever namespace streamed it — the handoff
+ * is the edge, so the cards hold only the work the workers actually did.
  *
  * The second is the spine — request, supervisor, builder, response — which is
  * the system's architecture rather than anything a particular run emitted. It
@@ -185,7 +187,12 @@ function toDelegations(
   rows: readonly TraceRowVM[],
   roles: ReadonlyMap<string, string>,
 ): { branches: FlowAgentVM[]; handoffs: FlowHandoffVM[]; returns: FlowReturnVM[] } {
-  const workers = splitByInstance(rows).filter((branch) => branch.agentKey !== SUPERVISOR_KEY);
+  // A handoff is a line on this graph, never a card on it. The `transfer_to_…`
+  // call that opens a delegation is already drawn as the connection into the
+  // worker it wakes, so keeping it as a step too would state the same delegation
+  // twice — once on the edge and once inside the branch that issued it.
+  const work = rows.filter((row) => row.kind !== 'delegation');
+  const workers = splitByInstance(work).filter((branch) => branch.agentKey !== SUPERVISOR_KEY);
   const laneFor = laneAssigner();
 
   // "2nd call" is only worth saying when the run reached the agent more than

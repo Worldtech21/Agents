@@ -67,6 +67,13 @@ export function AppShell() {
 
   const [employeeField, setEmployeeField] = useState(selectedEmployeeId ?? '');
 
+  // The report screen's graph takes the whole pane, so its two controls live in
+  // the header rather than costing the drawing a strip of its own. Held here for
+  // that reason, and keyed to the joiner so a new report opens on the report.
+  const [graphViewFor, setGraphViewFor] = useState<string | null>(null);
+  const graphViewKey = selectedEmployeeId ?? 'none';
+  const isGraphView = graphViewFor === graphViewKey;
+
   /* --------------------------------------------------------------- trace --- */
 
   const selectedOutcome = selectedEmployeeId
@@ -123,6 +130,9 @@ export function AppShell() {
       queue.markRun(employeeId);
       setEmployeeField(employeeId);
       openReport(employeeId);
+      // A run lands on the graph and stays there: whoever watched it draw is
+      // reading it, and the report is a click away rather than an interruption.
+      setGraphViewFor(employeeId);
       void run.run(employeeId).catch(() => {
         // Reported through `run.stream.error`; the screen renders it.
       });
@@ -179,6 +189,25 @@ export function AppShell() {
           disabled={employeeField.trim().length === 0 || health.data?.ready === false}
           // The run control is HR's; an employee never analyses somebody else.
           showRunControl={persona.mode === 'hr'}
+          // While a run streams there is no report to go back to, so the switch
+          // only appears once the graph has settled.
+          viewActions={
+            view === 'report' && isGraphView && !run.isRunning ? (
+              <>
+                <Button
+                  variant="card"
+                  size="lg"
+                  onClick={() => startRun(selectedEmployeeId ?? '')}
+                  disabled={!selectedEmployeeId}
+                >
+                  Replay
+                </Button>
+                <Button variant="outline" size="lg" onClick={() => setGraphViewFor(null)}>
+                  Results
+                </Button>
+              </>
+            ) : null
+          }
         />
 
         {health.data && !health.data.ready ? (
@@ -226,6 +255,8 @@ export function AppShell() {
               employeeId={selectedEmployeeId}
               outcome={selectedOutcome}
               isRunning={run.isRunning}
+              isGraphView={isGraphView}
+              onShowGraph={() => setGraphViewFor(graphViewKey)}
               runError={run.stream.error}
               trace={trace}
               agents={agents}

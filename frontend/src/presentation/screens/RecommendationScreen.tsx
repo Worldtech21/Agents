@@ -22,7 +22,6 @@ import {
   RefusalState,
   StateView,
 } from '@presentation/molecules/StateViews';
-import { AgentTraceFlowModal } from '@presentation/organisms/AgentTraceFlowModal';
 import { AgentTracePanel } from '@presentation/organisms/AgentTracePanel';
 import { FlowCanvas } from '@presentation/organisms/FlowCanvas';
 import { EmployeeProfileCard } from '@presentation/organisms/EmployeeProfileCard';
@@ -34,6 +33,10 @@ export interface RecommendationScreenProps {
   readonly employeeId: string | null;
   readonly outcome: RecommendationOutcome | undefined;
   readonly isRunning: boolean;
+  /** Whether the graph has the pane instead of the report. Owned by the shell,
+      which draws the switch back in the app header. */
+  readonly isGraphView: boolean;
+  readonly onShowGraph: () => void;
   readonly runError: Error | null;
   readonly trace: TracePanelVM;
   /** The roster, so the flow graph can say what each worker is for. */
@@ -51,6 +54,8 @@ export function RecommendationScreen({
   employeeId,
   outcome,
   isRunning,
+  isGraphView,
+  onShowGraph,
   runError,
   trace,
   agents,
@@ -62,7 +67,6 @@ export function RecommendationScreen({
 }: RecommendationScreenProps) {
   const [excluded, setExcluded] = useState<ReadonlySet<string>>(new Set());
   const [isPayloadOpen, setPayloadOpen] = useState(false);
-  const [isGraphOpen, setGraphOpen] = useState(false);
 
   const recommendation = outcome?.kind === 'recommendation' ? outcome.view : null;
 
@@ -109,12 +113,15 @@ export function RecommendationScreen({
     if (employeeId) onRun(employeeId);
   };
 
+  // A run in flight is the graph and nothing else: the report has no content to
+  // show yet, and the trace panel would only list in words what the graph is
+  // already drawing. When it lands the graph holds the pane at the same size —
+  // the shell's Results control is what moves on, not the run finishing.
+  const showGraph = isRunning || isGraphView;
+
   return (
-    <div className={[styles.reportGrid, isRunning ? styles.reportGridSolo : ''].join(' ')}>
-      {/* A run in flight is the graph and nothing else: the report has no
-          content to show yet, and the trace panel would only list in words what
-          the graph is already drawing. Both come back the moment it lands. */}
-      {isRunning ? (
+    <div className={[styles.reportGrid, showGraph ? styles.reportGridSolo : ''].join(' ')}>
+      {showGraph ? (
         <div className={styles.traceFlow}>
           <FlowCanvas flow={flow} isRunning={isRunning} />
         </div>
@@ -144,19 +151,10 @@ export function RecommendationScreen({
             isRunning={isRunning}
             canReplay={employeeId !== null}
             onReplay={replay}
-            onOpenGraph={() => setGraphOpen(true)}
+            onOpenGraph={onShowGraph}
           />
         </>
       )}
-
-      <AgentTraceFlowModal
-        open={isGraphOpen}
-        flow={flow}
-        isRunning={isRunning}
-        canReplay={employeeId !== null}
-        onReplay={replay}
-        onClose={() => setGraphOpen(false)}
-      />
     </div>
   );
 }

@@ -143,9 +143,9 @@ export function toTracePanel(input: TraceInput): TracePanelVM {
 
   return {
     rows,
-    statusLabel: input.running ? 'Streaming' : streamError ? 'Failed' : input.settled ? 'Complete' : 'Idle',
-    statusTone: input.running ? 'blue' : streamError ? 'red' : input.settled ? 'green' : 'neutral',
-    metaLabel: buildMetaLabel(input, folded.length, startTs, endTs, streamError),
+    // statusLabel: input.running ? 'Streaming' : streamError ? 'Failed' : input.settled ? 'Complete' : 'Idle',
+    // statusTone: input.running ? 'blue' : streamError ? 'red' : input.settled ? 'green' : 'neutral',
+    // metaLabel: buildMetaLabel(input, folded.length, startTs, endTs, streamError),
     activeAgentKey,
   };
 }

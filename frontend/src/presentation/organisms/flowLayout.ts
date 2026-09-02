@@ -24,7 +24,6 @@ import type { FlowAgentVM, FlowLane, TraceFlowVM, TraceStepState } from '@bff/vi
 const CARD_W = 300;
 const ROOT_W = 320;
 
-const TERMINAL_H = 84;
 /* The builder carries a longer line than the two terminals do, so it gets a
    budget of its own rather than quietly borrowing theirs. */
 const BUILDER_H = 92;
@@ -305,34 +304,6 @@ export function toGraph(flow: TraceFlowVM): { nodes: Node[]; edges: Edge[] } {
     markerEnd: arrowFor('io'),
     zIndex: 1,
   });
-
-  /* ----------------------------------------------------------- the keys --- */
-
-  // Anchored to the drawing rather than the viewport, so they pan and export
-  // with it. Placed off the deepest column on either side.
-  const deepest = Math.max(
-    responseY + TERMINAL_H,
-    ...placements.map((placement) => placement.bottom),
-  );
-
-  nodes.push(
-    {
-      id: 'legend',
-      type: 'legend',
-      position: { x: leftEdgeX, y: deepest + 80 },
-      data: {},
-      draggable: false,
-      selectable: false,
-    },
-    {
-      id: 'laneKey',
-      type: 'laneKey',
-      position: { x: SIDE_DX - CARD_W / 2, y: deepest + 80 },
-      data: {},
-      draggable: false,
-      selectable: false,
-    },
-  );
 
   return { nodes, edges };
 }

@@ -223,9 +223,9 @@ export interface TraceRowVM {
 
 export interface TracePanelVM {
   readonly rows: readonly TraceRowVM[];
-  readonly statusLabel: string;
-  readonly statusTone: Tone;
-  readonly metaLabel: string;
+  // readonly statusLabel: string;
+  // readonly statusTone: Tone;
+  // readonly metaLabel: string;
   /** Key of the agent currently working, for the sidebar mesh highlight. */
   readonly activeAgentKey: string | null;
 }
@@ -376,7 +376,7 @@ export interface FlowTerminalVM {
 
 export interface TraceFlowVM {
   /** The drawing's own heading, over the graph. */
-  readonly title: string;
+  // readonly title: string;
   /** The question that started the run. */
   readonly request: FlowTerminalVM;
   readonly root: FlowRootVM;

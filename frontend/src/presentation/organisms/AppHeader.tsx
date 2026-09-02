@@ -10,7 +10,7 @@
  * breadcrumb and title stay, so the header still says where you are.
  */
 
-import { type FormEvent } from 'react';
+import { type FormEvent, type ReactNode } from 'react';
 
 import { Button } from '@presentation/atoms/Button';
 import { Icon } from '@presentation/atoms/Icon';
@@ -28,6 +28,9 @@ export interface AppHeaderProps {
   readonly disabled: boolean;
   /** False in employee mode, where there is nothing to run. */
   readonly showRunControl?: boolean;
+  /** Controls the screen below owns — they sit here so no screen has to spend
+      a strip of its own on a toolbar. */
+  readonly viewActions?: ReactNode;
 }
 
 export function AppHeader({
@@ -40,6 +43,7 @@ export function AppHeader({
   isRunning,
   disabled,
   showRunControl = true,
+  viewActions,
 }: AppHeaderProps) {
   const submit = (event: FormEvent) => {
     event.preventDefault();
@@ -53,34 +57,38 @@ export function AppHeader({
         <h3 className={styles.title}>{title}</h3>
       </div>
 
-      {!showRunControl ? null : (
-      <form className={styles.headerActions} onSubmit={submit} role="search">
-        <div className={styles.searchField}>
-          <Icon name="search" size={15} stroke="var(--ink-48)" />
-          <input
-            className={styles.searchInput}
-            value={employeeId}
-            onChange={(event) => onEmployeeIdChange(event.target.value)}
-            placeholder="Employee ID"
-            aria-label="Employee ID"
-            spellCheck={false}
-            autoComplete="off"
-          />
-        </div>
+      <div className={styles.headerActions}>
+        {viewActions}
 
-        {isRunning ? (
-          <Button type="button" variant="primary" size="lg" busy onClick={onCancel}>
-            <Icon name="spin" size={14} className={atoms.spinner} strokeWidth={1.8} />
-            Cancel run
-          </Button>
-        ) : (
-          <Button type="submit" variant="primary" size="lg" disabled={disabled}>
-            <Icon name="play" size={14} fill="currentColor" strokeWidth={1.8} />
-            Run recommendation
-          </Button>
+        {!showRunControl ? null : (
+          <form className={styles.headerRunForm} onSubmit={submit} role="search">
+            <div className={styles.searchField}>
+              <Icon name="search" size={15} stroke="var(--ink-48)" />
+              <input
+                className={styles.searchInput}
+                value={employeeId}
+                onChange={(event) => onEmployeeIdChange(event.target.value)}
+                placeholder="Employee ID"
+                aria-label="Employee ID"
+                spellCheck={false}
+                autoComplete="off"
+              />
+            </div>
+
+            {isRunning ? (
+              <Button type="button" variant="primary" size="lg" busy onClick={onCancel}>
+                <Icon name="spin" size={14} className={atoms.spinner} strokeWidth={1.8} />
+                Cancel run
+              </Button>
+            ) : (
+              <Button type="submit" variant="primary" size="lg" disabled={disabled}>
+                <Icon name="play" size={14} fill="currentColor" strokeWidth={1.8} />
+                Run recommendation
+              </Button>
+            )}
+          </form>
         )}
-      </form>
-      )}
+      </div>
     </header>
   );
 }

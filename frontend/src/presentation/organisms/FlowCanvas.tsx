@@ -43,8 +43,8 @@ import {
 import {
   TraceAgentNode,
   TraceBuilderNode,
-  TraceLaneKeyNode,
-  TraceLegendNode,
+  // TraceLaneKeyNode,
+  // TraceLegendNode,
   TraceRootNode,
   TraceStepNode,
   TraceTerminalNode,
@@ -62,8 +62,6 @@ const NODE_TYPES = {
   terminal: TraceTerminalNode,
   builder: TraceBuilderNode,
   title: TraceTitleNode,
-  legend: TraceLegendNode,
-  laneKey: TraceLaneKeyNode,
 } as unknown as NodeTypes;
 
 const EDGE_TYPES = {
@@ -142,7 +140,7 @@ function Canvas({ flow, isRunning }: FlowCanvasProps) {
 
   const refit = useCallback(() => {
     isFollowing.current = true;
-    void fitView({ padding: 0.12, duration: 320, maxZoom: 1 });
+    void fitView({ padding: 0.05, duration: 320, maxZoom: 1 });
   }, [fitView]);
 
   return (
@@ -197,6 +195,15 @@ function Canvas({ flow, isRunning }: FlowCanvasProps) {
       >
         <Background variant={BackgroundVariant.Dots} gap={22} size={1.4} />
       </ReactFlow>
+
+      {/* Pinned to the viewport rather than the drawing, so they stay legible
+          however deep the run grows and however far the view is panned. */}
+      {/* <div className={styles.flowLegendTopLeft}>
+        <TraceLegendNode />
+      </div>
+      <div className={styles.flowLegendTopRight}>
+        <TraceLaneKeyNode />
+      </div> */}
 
       <div className={styles.flowControls}>
         <Button variant="card" size="xs" onClick={() => void zoomIn({ duration: 160 })} aria-label="Zoom in">

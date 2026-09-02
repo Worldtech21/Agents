@@ -22,8 +22,8 @@ import {
   RefusalState,
   StateView,
 } from '@presentation/molecules/StateViews';
-import { AgentRunGraph } from '@presentation/organisms/AgentRunGraph';
 import { AgentTracePanel } from '@presentation/organisms/AgentTracePanel';
+import { FlowCanvas } from '@presentation/organisms/FlowCanvas';
 import { EmployeeProfileCard } from '@presentation/organisms/EmployeeProfileCard';
 import { ProvisioningHandoff } from '@presentation/organisms/ProvisioningHandoff';
 import { SodPanel } from '@presentation/organisms/SodPanel';
@@ -33,6 +33,10 @@ export interface RecommendationScreenProps {
   readonly employeeId: string | null;
   readonly outcome: RecommendationOutcome | undefined;
   readonly isRunning: boolean;
+  /** Whether the graph has the pane instead of the report. Owned by the shell,
+      which draws the switch back in the app header. */
+  readonly isGraphView: boolean;
+  readonly onShowGraph: () => void;
   readonly runError: Error | null;
   readonly trace: TracePanelVM;
   /** The roster, so the flow graph can say what each worker is for. */
@@ -50,6 +54,8 @@ export function RecommendationScreen({
   employeeId,
   outcome,
   isRunning,
+  isGraphView,
+  onShowGraph,
   runError,
   trace,
   agents,
@@ -61,7 +67,6 @@ export function RecommendationScreen({
 }: RecommendationScreenProps) {
   const [excluded, setExcluded] = useState<ReadonlySet<string>>(new Set());
   const [isPayloadOpen, setPayloadOpen] = useState(false);
-  const [isGraphView, setGraphView] = useState(false);
 
   const recommendation = outcome?.kind === 'recommendation' ? outcome.view : null;
 
@@ -111,20 +116,14 @@ export function RecommendationScreen({
   // A run in flight is the graph and nothing else: the report has no content to
   // show yet, and the trace panel would only list in words what the graph is
   // already drawing. Once it lands the graph stays available at the same size,
-  // now with a way back to the report.
+  // and the way back to the report is the shell's Results control.
   const showGraph = isRunning || isGraphView;
 
   return (
     <div className={[styles.reportGrid, showGraph ? styles.reportGridSolo : ''].join(' ')}>
       {showGraph ? (
         <div className={styles.traceFlow}>
-          <AgentRunGraph
-            flow={flow}
-            isRunning={isRunning}
-            canReplay={employeeId !== null}
-            onReplay={replay}
-            onShowResults={isRunning ? undefined : () => setGraphView(false)}
-          />
+          <FlowCanvas flow={flow} isRunning={isRunning} />
         </div>
       ) : (
         <>
@@ -152,7 +151,7 @@ export function RecommendationScreen({
             isRunning={isRunning}
             canReplay={employeeId !== null}
             onReplay={replay}
-            onOpenGraph={() => setGraphView(true)}
+            onOpenGraph={onShowGraph}
           />
         </>
       )}

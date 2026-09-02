@@ -22,9 +22,8 @@ import {
   RefusalState,
   StateView,
 } from '@presentation/molecules/StateViews';
-import { AgentTraceFlowModal } from '@presentation/organisms/AgentTraceFlowModal';
+import { AgentRunGraph } from '@presentation/organisms/AgentRunGraph';
 import { AgentTracePanel } from '@presentation/organisms/AgentTracePanel';
-import { FlowCanvas } from '@presentation/organisms/FlowCanvas';
 import { EmployeeProfileCard } from '@presentation/organisms/EmployeeProfileCard';
 import { ProvisioningHandoff } from '@presentation/organisms/ProvisioningHandoff';
 import { SodPanel } from '@presentation/organisms/SodPanel';
@@ -62,7 +61,7 @@ export function RecommendationScreen({
 }: RecommendationScreenProps) {
   const [excluded, setExcluded] = useState<ReadonlySet<string>>(new Set());
   const [isPayloadOpen, setPayloadOpen] = useState(false);
-  const [isGraphOpen, setGraphOpen] = useState(false);
+  const [isGraphView, setGraphView] = useState(false);
 
   const recommendation = outcome?.kind === 'recommendation' ? outcome.view : null;
 
@@ -109,14 +108,23 @@ export function RecommendationScreen({
     if (employeeId) onRun(employeeId);
   };
 
+  // A run in flight is the graph and nothing else: the report has no content to
+  // show yet, and the trace panel would only list in words what the graph is
+  // already drawing. Once it lands the graph stays available at the same size,
+  // now with a way back to the report.
+  const showGraph = isRunning || isGraphView;
+
   return (
-    <div className={[styles.reportGrid, isRunning ? styles.reportGridSolo : ''].join(' ')}>
-      {/* A run in flight is the graph and nothing else: the report has no
-          content to show yet, and the trace panel would only list in words what
-          the graph is already drawing. Both come back the moment it lands. */}
-      {isRunning ? (
+    <div className={[styles.reportGrid, showGraph ? styles.reportGridSolo : ''].join(' ')}>
+      {showGraph ? (
         <div className={styles.traceFlow}>
-          <FlowCanvas flow={flow} isRunning={isRunning} />
+          <AgentRunGraph
+            flow={flow}
+            isRunning={isRunning}
+            canReplay={employeeId !== null}
+            onReplay={replay}
+            onShowResults={isRunning ? undefined : () => setGraphView(false)}
+          />
         </div>
       ) : (
         <>
@@ -144,19 +152,10 @@ export function RecommendationScreen({
             isRunning={isRunning}
             canReplay={employeeId !== null}
             onReplay={replay}
-            onOpenGraph={() => setGraphOpen(true)}
+            onOpenGraph={() => setGraphView(true)}
           />
         </>
       )}
-
-      <AgentTraceFlowModal
-        open={isGraphOpen}
-        flow={flow}
-        isRunning={isRunning}
-        canReplay={employeeId !== null}
-        onReplay={replay}
-        onClose={() => setGraphOpen(false)}
-      />
     </div>
   );
 }

@@ -115,8 +115,8 @@ export function RecommendationScreen({
 
   // A run in flight is the graph and nothing else: the report has no content to
   // show yet, and the trace panel would only list in words what the graph is
-  // already drawing. Once it lands the graph stays available at the same size,
-  // and the way back to the report is the shell's Results control.
+  // already drawing. When it lands the graph holds the pane at the same size —
+  // the shell's Results control is what moves on, not the run finishing.
   const showGraph = isRunning || isGraphView;
 
   return (

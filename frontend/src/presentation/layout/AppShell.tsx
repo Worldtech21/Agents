@@ -130,6 +130,9 @@ export function AppShell() {
       queue.markRun(employeeId);
       setEmployeeField(employeeId);
       openReport(employeeId);
+      // A run lands on the graph and stays there: whoever watched it draw is
+      // reading it, and the report is a click away rather than an interruption.
+      setGraphViewFor(employeeId);
       void run.run(employeeId).catch(() => {
         // Reported through `run.stream.error`; the screen renders it.
       });

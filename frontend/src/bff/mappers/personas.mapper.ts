@@ -48,10 +48,16 @@ function toMode(raw: string): ActorMode {
   return raw.trim().toLowerCase() === 'hr' ? 'hr' : 'employee';
 }
 
+/**
+ * An employee with nobody above them approves rather than asks, so the
+ * switcher calls them a manager. Cosmetic only — `mode` still decides what the
+ * persona can actually reach.
+ */
 function toRoleLabel(dto: PersonaDTO, mode: ActorMode): string {
   if (mode === 'hr') return 'HR operations';
+  const kind = dto.manager_id?.trim() ? 'Employee' : 'Manager';
   const role = [dto.job_role, dto.department].filter(Boolean).join(' · ');
-  return role ? `Employee · ${role}` : 'Employee';
+  return role ? `${kind} · ${role}` : kind;
 }
 
 function toPendingLabel(count: number): string {

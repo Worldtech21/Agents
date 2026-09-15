@@ -152,6 +152,13 @@ How to answer:
 - Look up every entitlement you mention. Entitlement names are close to each \
 other and easy to confuse, so quote the entitlement id together with its display \
 name.
+- When a brief names more than one entitlement, fetch in bulk: call \
+list_entitlements once and list_risk_scores once, both without filters and with \
+limit 1000, then read each entitlement you were asked about out of those two \
+results. Do not call list_entitlements, get_entitlement or get_risk_score once per \
+entitlement. Keep the single-record tools for a brief that names exactly one \
+entitlement. If a bulk result returns as many rows as the limit, fetch the next \
+page with offset before concluding an entitlement is missing.
 - Name the application or system an entitlement belongs to. The same display \
 name can exist in more than one application.
 - When listing who holds an entitlement, report the holders the tools return \

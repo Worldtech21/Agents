@@ -295,6 +295,7 @@ export function AppShell() {
             <AssistantScreen
               turns={employee.assistant.turns}
               employeeName={persona.actor?.name ?? 'there'}
+              employeeId={persona.actor?.actorId ?? null}
               isBusy={employee.assistant.isBusy}
               error={employee.assistant.error}
               liveThoughts={employee.assistant.liveThoughts}

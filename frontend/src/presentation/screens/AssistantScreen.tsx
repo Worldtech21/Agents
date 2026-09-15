@@ -20,7 +20,31 @@ import { ThinkingTrace } from '@presentation/molecules/ThinkingTrace';
 import { VerdictCard } from '@presentation/molecules/VerdictCard';
 import styles from '@presentation/screens/screens.module.css';
 
-const SUGGESTIONS = [
+/**
+ * Openers, per persona.
+ *
+ * The two demo employees hold different access and sit on opposite sides of an
+ * approval — Ramesh approves what Sneha asks for — so the same three prompts
+ * would read as filler for one of them. Keyed by actor id, with a neutral set
+ * for any persona the backend adds later.
+ */
+const SUGGESTIONS_BY_ACTOR: Record<string, readonly string[]> = {
+  // Ramesh (EMP001) — already holds the finance SAP and PowerBI roles, and is
+  // the approver at the top of the chain.
+  EMP001: [
+    'What access could I have?',
+    'I need access to the finance SharePoint site',
+    'Which of my entitlements carry the most risk?',
+  ],
+  // Sneha (EMP002) — read-only in SAP today, and reports to Ramesh.
+  EMP002: [
+    'I need access to raise supplier invoices',
+    'What do I already have?',
+    'Who approves an access request for me?',
+  ],
+};
+
+const DEFAULT_SUGGESTIONS: readonly string[] = [
   'What access could I have?',
   'I need access to the risk portal',
   'What do I already have?',
@@ -29,6 +53,8 @@ const SUGGESTIONS = [
 export interface AssistantScreenProps {
   readonly turns: readonly AssistantTurn[];
   readonly employeeName: string;
+  /** Actor id of the signed-in persona, which picks the opening prompts. */
+  readonly employeeId: string | null;
   readonly isBusy: boolean;
   readonly error: Error | null;
   /** The reasoning of the turn in flight, streaming as it arrives. */
@@ -46,6 +72,7 @@ export interface AssistantScreenProps {
 export function AssistantScreen({
   turns,
   employeeName,
+  employeeId,
   isBusy,
   error,
   liveThoughts,
@@ -59,6 +86,7 @@ export function AssistantScreen({
   onCancel,
 }: AssistantScreenProps) {
   const [draft, setDraft] = useState('');
+  const suggestions = SUGGESTIONS_BY_ACTOR[employeeId?.toUpperCase() ?? ''] ?? DEFAULT_SUGGESTIONS;
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Follows the card appearing too, not just a new turn — it is the thing the
@@ -142,7 +170,7 @@ export function AssistantScreen({
       <div className={styles.composer}>
         {turns.length === 0 ? (
           <div className={styles.suggestions}>
-            {SUGGESTIONS.map((suggestion) => (
+            {suggestions.map((suggestion) => (
               <button
                 key={suggestion}
                 type="button"

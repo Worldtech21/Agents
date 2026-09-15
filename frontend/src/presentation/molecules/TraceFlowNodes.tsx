@@ -402,17 +402,17 @@ export function TraceTitleNode({ data }: NodeProps<TitleNode>) {
  */
 
 /** Each entry draws its own line, because the line *is* the thing being named. */
-const EDGE_KEY: ReadonlyArray<{
-  readonly label: string;
-  readonly lane: FlowLane;
-  readonly dashed: boolean;
-  readonly arrow: 'end' | 'start';
-}> = [
-  { label: 'Handoff (transfer_to_*)', lane: 'supervisor', dashed: false, arrow: 'end' },
-  { label: 'Return (transfer_back_to_supervisor)', lane: 'information', dashed: false, arrow: 'end' },
-  { label: 'Tool call', lane: 'analysis', dashed: true, arrow: 'end' },
-  { label: 'Tool result / data returned', lane: 'analysis', dashed: true, arrow: 'start' },
-];
+// const EDGE_KEY: ReadonlyArray<{
+//   readonly label: string;
+//   readonly lane: FlowLane;
+//   readonly dashed: boolean;
+//   readonly arrow: 'end' | 'start';
+// }> = [
+//   { label: 'Handoff (transfer_to_*)', lane: 'supervisor', dashed: false, arrow: 'end' },
+//   { label: 'Return (transfer_back_to_supervisor)', lane: 'information', dashed: false, arrow: 'end' },
+//   { label: 'Tool call', lane: 'analysis', dashed: true, arrow: 'end' },
+//   { label: 'Tool result / data returned', lane: 'analysis', dashed: true, arrow: 'start' },
+// ];
 
 // export function TraceLegendNode() {
 //   return (
@@ -451,16 +451,16 @@ const EDGE_KEY: ReadonlyArray<{
 //   );
 // }
 
-const LANE_KEY: ReadonlyArray<{ readonly label: string; readonly lane: FlowLane }> = [
-  { label: 'Input / output', lane: 'io' },
-  { label: 'Supervisor', lane: 'supervisor' },
-  { label: 'Information agent', lane: 'information' },
-  { label: 'Intelligence agent', lane: 'intelligence' },
-  { label: 'Verification agent', lane: 'verification' },
-  { label: 'Evaluation agent', lane: 'evaluation' },
-  { label: 'Analysis agent', lane: 'analysis' },
-  { label: 'Recommendation builder', lane: 'builder' },
-];
+// const LANE_KEY: ReadonlyArray<{ readonly label: string; readonly lane: FlowLane }> = [
+//   { label: 'Input / output', lane: 'io' },
+//   { label: 'Supervisor', lane: 'supervisor' },
+//   { label: 'Information agent', lane: 'information' },
+//   { label: 'Intelligence agent', lane: 'intelligence' },
+//   { label: 'Verification agent', lane: 'verification' },
+//   { label: 'Evaluation agent', lane: 'evaluation' },
+//   { label: 'Analysis agent', lane: 'analysis' },
+//   { label: 'Recommendation builder', lane: 'builder' },
+// ];
 
 // export function TraceLaneKeyNode() {
 //   return (

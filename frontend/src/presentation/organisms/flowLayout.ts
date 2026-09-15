@@ -131,7 +131,6 @@ export function toGraph(flow: TraceFlowVM): { nodes: Node[]; edges: Edge[] } {
   /* -------------------------------------------------------------- spine --- */
 
   nodes.push(
-    titleNode(flow),
     terminalNode('request', flow.request, 'user', { hasIn: false, hasOut: true }, SPINE_TOP),
     {
       id: 'root',
@@ -309,18 +308,6 @@ export function toGraph(flow: TraceFlowVM): { nodes: Node[]; edges: Edge[] } {
 }
 
 /* --------------------------------------------------------------- helpers --- */
-
-function titleNode(flow: TraceFlowVM): Node {
-  return {
-    id: 'title',
-    type: 'title',
-    position: { x: -320, y: SPINE_TOP - 130 },
-    data: { title: flow.title, subtitle: flow.metaLabel },
-    draggable: false,
-    selectable: false,
-    width: 640,
-  };
-}
 
 function terminalNode(
   id: string,

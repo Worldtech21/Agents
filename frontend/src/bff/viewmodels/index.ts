@@ -223,9 +223,9 @@ export interface TraceRowVM {
 
 export interface TracePanelVM {
   readonly rows: readonly TraceRowVM[];
-  // readonly statusLabel: string;
-  // readonly statusTone: Tone;
-  // readonly metaLabel: string;
+  readonly statusLabel: string;
+  readonly statusTone: Tone;
+  readonly metaLabel: string;
   /** Key of the agent currently working, for the sidebar mesh highlight. */
   readonly activeAgentKey: string | null;
 }

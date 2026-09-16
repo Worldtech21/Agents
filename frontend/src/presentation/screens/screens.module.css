@@ -197,17 +197,17 @@
 }
 
 .consoleEmptyTitle {
-  font-size: 21px;
-  line-height: 1.19;
-  letter-spacing: -0.3px;
+  font-size: 26px;
+  line-height: 1.18;
+  letter-spacing: -0.32px;
   color: var(--ink);
 }
 
 .consoleEmptyBody {
-  font-size: 14px;
-  line-height: 1.43;
+  font-size: 15px;
+  line-height: 1.5;
   letter-spacing: var(--track-14);
-  max-width: 52ch;
+  max-width: 64ch;
   margin: 0 auto;
   text-wrap: pretty;
 }

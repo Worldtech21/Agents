@@ -24,7 +24,10 @@ export function ChatBubble({ message }: { message: ChatMessageVM }) {
         className={[
           styles.chatBubble,
           isUser ? styles.chatBubbleUser : styles.chatBubbleAssistant,
-        ].join(' ')}
+          !isUser ? styles.chatBubbleEnter : null,
+        ]
+          .filter(Boolean)
+          .join(' ')}
       >
         {message.text}
       </div>

@@ -133,21 +133,25 @@ export function TraceToolEdge({ sourceX, sourceY, targetX, targetY, data }: Edge
         d={down}
         fill="none"
         stroke={lane}
-        strokeWidth={1.5}
-        strokeDasharray="5 4"
+        strokeWidth={3.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeDasharray="6 4"
         markerEnd={`url(#flow-arrow-${data?.lane ?? 'analysis'})`}
-        opacity={active || answered ? 0.9 : 0.5}
+        opacity={active || answered ? 1 : 0.6}
         className={active ? styles.flowStrandRunning : undefined}
       />
       <path
         d={up}
         fill="none"
         stroke={lane}
-        strokeWidth={1.5}
-        strokeDasharray="5 4"
+        strokeWidth={3.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeDasharray="6 4"
         markerEnd={`url(#flow-arrow-${data?.lane ?? 'analysis'})`}
         // Nothing has come back up yet, so the strand is drawn but not claimed.
-        opacity={answered ? 0.9 : 0.28}
+        opacity={answered ? 1 : 0.45}
       />
 
       <EdgeLabelRenderer>

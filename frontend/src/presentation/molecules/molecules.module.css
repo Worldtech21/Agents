@@ -470,13 +470,59 @@
 }
 
 .chatBubbleAssistant {
-  background: var(--parchment);
+  background: color-mix(in srgb, var(--parchment) 84%, #ffffff 16%);
+  border: 1px solid color-mix(in srgb, var(--hairline) 60%, #ffffff 40%);
+  box-shadow: 0 6px 18px rgba(14, 21, 35, 0.06);
+  font-size: 17.5px;
+  padding: 18px 22px;
+  font-weight: 500;
+  line-height: 1.6;
+  position: relative;
+}
+
+.chatBubbleAssistant::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 8px;
+  bottom: 8px;
+  width: 6px;
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--lane, var(--blue)) 60%, transparent), color-mix(in srgb, var(--lane, var(--blue)) 30%, transparent));
 }
 
 .chatCites {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.chatCites > * {
+  box-shadow: 0 4px 10px rgba(14,21,35,0.06);
+  border: 1px solid color-mix(in srgb, var(--hairline) 60%, #ffffff 40%);
+  background: var(--card);
+}
+
+@keyframes fadeSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.995);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.chatBubbleEnter {
+  animation: fadeSlideIn 340ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chatBubbleEnter {
+    animation: none;
+  }
 }
 
 /* -------------------------------------------------------- thinking trace --- */
@@ -942,7 +988,6 @@
   flex-wrap: wrap;
   gap: 6px;
 }
-
 .verdictActions {
   display: flex;
   justify-content: flex-end;
@@ -968,10 +1013,10 @@
   display: flex;
   gap: 10px;
   padding: 12px 14px;
-  border: 1.5px solid color-mix(in srgb, var(--lane, var(--hairline)) 52%, var(--hairline));
+  border: 1.8px solid color-mix(in srgb, var(--lane, var(--hairline)) 72%, var(--hairline));
   border-radius: 14px;
-  background: color-mix(in srgb, var(--lane, var(--card)) 6%, var(--card));
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+  background: color-mix(in srgb, var(--lane, var(--card)) 16%, var(--card));
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.12);
   font-family: var(--font-text);
   color: var(--ink);
   text-align: left;
@@ -992,7 +1037,7 @@
 /* Drawn, but not yet earned: the architecture is visible before the run
    reaches it, without the drawing claiming work that has not happened. */
 .flowCard[data-state='idle'] {
-  opacity: 0.62;
+  opacity: 0.95;
 }
 
 .flowCardBody {
@@ -1017,11 +1062,12 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
-  background: color-mix(in srgb, var(--lane) 14%, var(--card));
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--lane) 18%, var(--card));
   color: var(--lane);
+  border: 1.5px solid color-mix(in srgb, var(--lane) 42%, var(--hairline));
 }
 
 /* Where this node falls in the run's numbering — `1`, `5`, `5.2`. */
@@ -1045,8 +1091,8 @@
   min-width: 0;
   /* Takes the slack so the state dot settles against the right edge. */
   flex: 1;
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
   letter-spacing: var(--track-14);
   white-space: nowrap;
   overflow: hidden;
@@ -1342,11 +1388,11 @@
   align-items: center;
   gap: 5px;
   max-width: 260px;
-  padding: 2px 7px;
-  border-radius: 6px;
-  background: var(--parchment);
+  padding: 4px 9px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--parchment) 80%, #ffffff 20%);
   font-family: var(--font-mono);
-  line-height: 16px;
+  line-height: 18px;
   pointer-events: all;
   cursor: default;
 }
@@ -1374,9 +1420,9 @@
 
 .flowEdgeNote {
   min-width: 0;
-  font-size: 10.5px;
+  font-size: 12px;
   letter-spacing: 0;
-  color: var(--lane, var(--ink-80));
+  color: var(--ink);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1398,14 +1444,16 @@
 }
 
 .flowStrandLabel {
-  padding: 1px 5px;
-  border-radius: 5px;
-  background: var(--parchment);
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--lane) 18%, var(--parchment));
+  border: 1px solid color-mix(in srgb, var(--lane) 46%, var(--hairline));
   font-family: var(--font-text);
-  font-size: 10px;
+  font-size: 12px;
   letter-spacing: var(--track-12);
-  color: var(--lane, var(--ink-48));
+  color: var(--lane, var(--ink));
   white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
 }
 
 /* A result that has not come back yet is named, and visibly still pending. */

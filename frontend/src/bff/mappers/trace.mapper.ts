@@ -141,13 +141,17 @@ export function toTracePanel(input: TraceInput): TracePanelVM {
   const lastStep = folded[folded.length - 1];
   const activeAgentKey = input.running ? (lastActiveAgent ?? lastStep?.agentKey ?? null) : null;
 
-  return {
-    rows,
-    // statusLabel: input.running ? 'Streaming' : streamError ? 'Failed' : input.settled ? 'Complete' : 'Idle',
-    // statusTone: input.running ? 'blue' : streamError ? 'red' : input.settled ? 'green' : 'neutral',
-    // metaLabel: buildMetaLabel(input, folded.length, startTs, endTs, streamError),
-    activeAgentKey,
-  };
+
+    const statusLabel = input.running ? 'Streaming' : streamError ? 'Failed' : input.settled ? 'Complete' : 'Idle';
+    const statusTone: Tone = input.running ? 'blue' : streamError ? 'red' : input.settled ? 'green' : 'neutral';
+    const metaLabel = buildMetaLabel(input, folded.length, startTs, endTs, streamError);
+    return {
+      rows,
+      statusLabel,
+      statusTone,
+      metaLabel,
+      activeAgentKey,
+    };
 }
 
 /**

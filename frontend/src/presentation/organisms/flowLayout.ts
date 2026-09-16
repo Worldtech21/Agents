@@ -372,11 +372,10 @@ function spineEdge(
  */
 function strokeFor(lane: FlowLane, state: TraceStepState) {
   const emphasised = state === 'active' || state === 'failed';
-
   return {
     stroke: LANE_VARIABLE[lane],
-    strokeWidth: emphasised ? 2 : 1.6,
-    opacity: state === 'idle' ? 0.34 : emphasised ? 1 : 0.72,
+    strokeWidth: emphasised ? 3.6 : 3.0,
+    opacity: state === 'idle' ? 0.6 : emphasised ? 1 : 0.95,
   };
 }
 

@@ -637,7 +637,7 @@
   background: var(--parchment);
   /* React Flow reads its dot grid from this variable; pointing it at the
      design's hairline is what makes the canvas theme with everything else. */
-  --xy-background-pattern-color: var(--hairline);
+  --xy-background-pattern-color: var(--divider);
 }
 
 /* The graph is read-only, so the connection handles exist only to anchor an

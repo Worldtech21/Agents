@@ -69,7 +69,7 @@ export function toTraceFlow(input: FlowInput): TraceFlowVM {
   const failed = input.trace.rows.some((row) => row.kind === 'error' || row.state === 'failed');
 
   return {
-    // title: 'Multi-Agent LangGraph System — execution flow',
+    title: input.employeeId ? `Execution flow — ${input.employeeId}` : 'Execution flow',
     request: toRequest(input),
     root: toRoot(branches, input.trace.rows, input),
     branches,

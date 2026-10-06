@@ -220,6 +220,10 @@ class DecisionVerdict:
     policy_basis: str
     sod_conflicts: tuple[SodConflict, ...] = ()
     already_held: bool = False
+    #: The catalog's plain-language account of what the entitlement lets someone
+    #: do.  Empty for a row that carries no description, so a caller must treat
+    #: it as optional rather than render a blank line.
+    description: str = ""
 
     @property
     def rendered_conflicts(self) -> str:

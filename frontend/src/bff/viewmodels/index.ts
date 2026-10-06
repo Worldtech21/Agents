@@ -532,6 +532,8 @@ export interface VerdictVM {
   readonly entitlementId: string;
   readonly entitlementName: string;
   readonly application: string;
+  /** What the access actually lets them do. Empty when the catalog is silent. */
+  readonly description: string;
   readonly riskLabel: string;
   readonly riskTone: Tone;
   readonly approvalRequired: boolean;
@@ -564,6 +566,8 @@ export interface CatalogEntryVM {
   readonly entitlementId: string;
   readonly entitlementName: string;
   readonly application: string;
+  /** What the entitlement grants. Empty when the catalog is silent. */
+  readonly description: string;
   readonly riskLabel: string;
   readonly riskTone: Tone;
   readonly approvalRequired: boolean;

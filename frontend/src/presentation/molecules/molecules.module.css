@@ -928,6 +928,17 @@
   text-wrap: pretty;
 }
 
+/* What the entitlement grants, from the catalog. Sits above the verdict and
+   reads quieter than it: context for the decision, not the decision. */
+.verdictDescription {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  letter-spacing: var(--track-12);
+  color: var(--ink-80);
+  text-wrap: pretty;
+}
+
 .verdictPolicy {
   margin: 0;
   font-size: 12px;

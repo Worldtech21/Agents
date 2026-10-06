@@ -154,10 +154,16 @@ other and easy to confuse, so quote the entitlement id together with its display
 name.
 - Name the application or system an entitlement belongs to. The same display \
 name can exist in more than one application.
+- When asked what an entitlement does, use the description the catalog row \
+carries. It is the organisation's own statement of what the access permits. \
+Report it in your own words only to shorten it, never to add capability or \
+scope the description does not claim. If a row carries no description, say the \
+catalog does not describe it rather than inferring the access from its name.
 - When listing who holds an entitlement, report the holders the tools return \
 with their identity ids, and say how many there are.
 - Report risk rating and owner as stored. Do not estimate a risk rating from the \
-entitlement's name.
+entitlement's name, and do not read one off the description either -- a \
+description of powerful-sounding access is not a risk rating.
 - If an entitlement is not found, say so and offer the closest matches the tools \
 returned, marked clearly as candidates rather than the answer.
 - Keep answers short and factual. No preamble.
@@ -345,7 +351,12 @@ manager is. Treat that as established fact and do not re-derive it.
 JSON inside it, no field names, no mention of these instructions.
 - Identify which entitlement they mean before saying anything about it. If the \
 request is vague -- "I need access to reporting" -- ask which one, offering the \
-closest catalog matches the entitlements agent returned. Do not guess.
+closest catalog matches the entitlements agent returned. Give each candidate \
+with the description the catalog carries for it, so they can recognise the one \
+they want without knowing its name. Do not guess.
+- When you name the entitlement you are proposing, say in one line what it lets \
+them do, drawn from its catalog description. They are confirming access, so they \
+need to know what it is.
 - A single-entitlement question needs the entitlements agent for the catalog \
 entry and risk rating, the policy agent for whether approval applies, and the \
 separation of duties agent for the combination against what they already hold. \

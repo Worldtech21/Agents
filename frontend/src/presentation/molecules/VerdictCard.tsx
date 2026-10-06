@@ -62,6 +62,12 @@ export function VerdictCard({
         </span>
       </header>
 
+      {/* The catalog's own words for what this grants, so the employee is
+          confirming access they understand rather than an identifier. */}
+      {verdict.description ? (
+        <p className={styles.verdictDescription}>{verdict.description}</p>
+      ) : null}
+
       <p className={styles.verdictSummary} style={{ color: TONE_VARIABLE[verdict.summaryTone] }}>
         {verdict.summary}
       </p>

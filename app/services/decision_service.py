@@ -86,6 +86,7 @@ class DecisionService:
             policy_basis=policy_basis,
             sod_conflicts=conflicts,
             already_held=name in subject.entitlements,
+            description=str(entitlement.get("description") or ""),
         )
 
     async def catalog(self) -> list[dict[str, Any]]:

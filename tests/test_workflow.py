@@ -72,12 +72,15 @@ NEW_JOINERS = {
     },
 }
 
+#: Catalog rows as the entitlements MCP serves them.  ``description`` is the
+#: catalog's own plain-language account of the access; ENT999 carries none, so
+#: the no-description path stays covered.
 ENTITLEMENTS = [
-    {"entitlement_id": "ENT005", "entitlement_name": "JIRA_USER", "application": "JIRA", "owner": "Engineering IT"},
-    {"entitlement_id": "ENT008", "entitlement_name": "RSA_GRC", "application": "RSA Archer", "owner": "Risk IT"},
-    {"entitlement_id": "ENT010", "entitlement_name": "AUDIT_TOOL", "application": "Audit Platform", "owner": "Audit IT"},
-    {"entitlement_id": "ENT002", "entitlement_name": "SAP_AP_INVOICE", "application": "SAP ECC", "owner": "Finance IT"},
-    {"entitlement_id": "ENT003", "entitlement_name": "POWERBI_FINANCE", "application": "PowerBI", "owner": "BI Team"},
+    {"entitlement_id": "ENT005", "entitlement_name": "JIRA_USER", "application": "JIRA", "owner": "Engineering IT", "description": "Lets someone raise and comment on tickets in JIRA."},
+    {"entitlement_id": "ENT008", "entitlement_name": "RSA_GRC", "application": "RSA Archer", "owner": "Risk IT", "description": "Lets someone open and edit risk registers in RSA Archer."},
+    {"entitlement_id": "ENT010", "entitlement_name": "AUDIT_TOOL", "application": "Audit Platform", "owner": "Audit IT", "description": "Lets someone read audit findings and sign off on remediation."},
+    {"entitlement_id": "ENT002", "entitlement_name": "SAP_AP_INVOICE", "application": "SAP ECC", "owner": "Finance IT", "description": "Lets someone post supplier invoices for payment in SAP."},
+    {"entitlement_id": "ENT003", "entitlement_name": "POWERBI_FINANCE", "application": "PowerBI", "owner": "BI Team", "description": "Lets someone view the finance reporting workspace in PowerBI."},
     {"entitlement_id": "ENT999", "entitlement_name": "UNSCORED_THING", "application": "Somewhere", "owner": "Nobody"},
 ]
 
@@ -618,6 +621,23 @@ async def test_the_catalog_labels_each_entitlement_with_its_verdict(
     assert by_name["JIRA_USER"]["approval_required"] is False
     assert by_name["RSA_GRC"]["approval_required"] is True
     assert by_name["UNSCORED_THING"]["approval_required"] is True
+    # The catalog's description survives the join with risk and policy — it is
+    # what a client labels an entitlement with before anyone requests it.
+    assert by_name["JIRA_USER"]["description"].startswith("Lets someone raise")
+
+
+async def test_the_verdict_carries_the_catalog_description(services: RequestService):
+    """So the employee confirms access they can read, not just an identifier."""
+    _, verdict, _ = await services.analyze("EMP002", entitlement_name="RSA_GRC")
+    assert verdict.description == "Lets someone open and edit risk registers in RSA Archer."
+
+
+async def test_a_row_without_a_description_yields_an_empty_one(
+    services: RequestService,
+):
+    """The field is newer than the data, so its absence must not fail a lookup."""
+    _, verdict, _ = await services.analyze("EMP002", entitlement_name="UNSCORED_THING")
+    assert verdict.description == ""
 
 
 # ------------------------------------------------------- employee mode on chat

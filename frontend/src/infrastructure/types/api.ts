@@ -250,6 +250,8 @@ export interface VerdictDTO {
   readonly entitlement_id: string;
   readonly entitlement_name: string;
   readonly application: string;
+  /** What the entitlement grants, in the catalog's own words. May be empty. */
+  readonly description: string;
   readonly risk_score: number | null;
   readonly risk_category: string;
   readonly approval_required: boolean;
@@ -302,6 +304,8 @@ export interface CatalogEntryDTO {
   readonly entitlement_name: string;
   readonly application: string;
   readonly owner: string;
+  /** What the entitlement grants, in the catalog's own words. May be empty. */
+  readonly description: string;
   readonly risk_score: number | null;
   readonly risk_category: string;
   readonly approval_required: boolean;

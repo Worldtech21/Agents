@@ -96,6 +96,9 @@ class VerdictDTO(BaseModel):
     entitlement_id: str
     entitlement_name: str
     application: str
+    #: What the entitlement lets someone do, as the catalog states it. Empty when
+    #: the catalog row carries no description.
+    description: str = ""
     risk_score: int | None
     risk_category: str
     approval_required: bool
@@ -114,6 +117,7 @@ class VerdictDTO(BaseModel):
             entitlement_id=verdict.entitlement_id,
             entitlement_name=verdict.entitlement_name,
             application=verdict.application,
+            description=verdict.description,
             risk_score=verdict.risk_score,
             risk_category=verdict.risk_category,
             approval_required=verdict.approval_required,
@@ -231,6 +235,9 @@ class CatalogEntryDTO(BaseModel):
     entitlement_name: str
     application: str
     owner: str = ""
+    #: The catalog's own plain-language account of what the entitlement grants.
+    #: Optional, because the field is newer than the data behind it.
+    description: str = ""
     risk_score: int | None = None
     risk_category: str = ""
     approval_required: bool = False

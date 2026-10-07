@@ -465,6 +465,24 @@
   overflow-wrap: anywhere;
 }
 
+/* A bubble's own blocks space themselves; the bubble keeps its padding as the
+   outer frame, so the first and last block sit flush against it. */
+.chatBubble > * + * {
+  margin-top: 10px;
+}
+
+.chatProse {
+  margin: 0;
+}
+
+.chatList {
+  margin: 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .chatBubbleUser {
   background: var(--tint);
 }

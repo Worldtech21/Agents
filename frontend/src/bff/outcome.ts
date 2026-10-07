@@ -13,9 +13,14 @@ import {
   toSupervisorRefusal,
   type RecommendationContext,
 } from '@bff/mappers/recommendation.mapper';
-import { toRequestIntent } from '@bff/mappers/requests.mapper';
+import { toEntitlementCandidates, toRequestIntent } from '@bff/mappers/requests.mapper';
 import { parseSupervisorAnswer } from '@bff/parse/supervisorPayload';
-import type { RecommendationVM, RequestIntentVM, SupervisorRefusalVM } from '@bff/viewmodels';
+import type {
+  EntitlementCandidateVM,
+  RecommendationVM,
+  RequestIntentVM,
+  SupervisorRefusalVM,
+} from '@bff/viewmodels';
 import type { RawRecommendationPayload } from '@infrastructure/types/supervisor';
 
 export type RecommendationOutcome =
@@ -91,6 +96,8 @@ export type AssistantOutcome =
       readonly kind: 'reply';
       /** Prose written for the employee, rendered as the chat bubble. */
       readonly reply: string;
+      /** The entries to choose between when the request matched several. */
+      readonly candidates: readonly EntitlementCandidateVM[];
       /**
        * What the assistant proposed. A proposal only — the confirmation card is
        * drawn from `POST /requests/analyze`, never from this.
@@ -109,6 +116,7 @@ export function toAssistantOutcome(answer: string, threadId: string): AssistantO
       return {
         kind: 'reply',
         reply: parsed.reply.reply,
+        candidates: toEntitlementCandidates(parsed.reply.candidates),
         intent: toRequestIntent(parsed.reply.requestIntent),
       };
     case 'error':

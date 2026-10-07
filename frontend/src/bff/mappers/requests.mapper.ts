@@ -12,6 +12,7 @@ import { toneForRequestStatus, toneForRisk } from '@bff/tone';
 import type {
   AccessRequestVM,
   CatalogEntryVM,
+  EntitlementCandidateVM,
   RequestIntentVM,
   Tone,
   VerdictVM,
@@ -21,7 +22,10 @@ import type {
   CatalogEntryDTO,
   VerdictDTO,
 } from '@infrastructure/types/api';
-import type { RawRequestIntent } from '@infrastructure/types/supervisor';
+import type {
+  RawEntitlementCandidate,
+  RawRequestIntent,
+} from '@infrastructure/types/supervisor';
 
 const UNKNOWN = '—';
 
@@ -124,6 +128,22 @@ export function toRequestIntent(raw: RawRequestIntent | null): RequestIntentVM |
     justification: raw.justification ?? '',
     readyToSubmit: raw.readyToSubmit === true,
   } satisfies RequestIntentVM;
+}
+
+export function toEntitlementCandidates(
+  raw: readonly RawEntitlementCandidate[],
+): EntitlementCandidateVM[] {
+  return raw.map((candidate) => {
+    const name = candidate.entitlementName ?? candidate.entitlementId ?? '';
+    return {
+      key: candidate.entitlementId ?? name,
+      entitlementId: candidate.entitlementId,
+      entitlementName: name,
+      application: candidate.application,
+      description: candidate.description ?? 'No description in the catalog.',
+      alreadyHeld: candidate.alreadyHeld === true,
+    } satisfies EntitlementCandidateVM;
+  });
 }
 
 export function toCatalogEntries(dtos: readonly CatalogEntryDTO[]): CatalogEntryVM[] {

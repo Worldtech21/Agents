@@ -65,7 +65,8 @@ class Base(DeclarativeBase):
 
 
 class EntitlementCatalog(Base):
-    """What an entitlement is: its id, name, owning application and owner.
+    """What an entitlement is: its id, name, owning application, owner and a
+    plain-language description of what it lets someone do.
 
     The catalog is the anchor of the schema — risk scores, peer affinity and SoD
     rules all reference an entitlement by *name*, not by id, because that is the
@@ -78,6 +79,8 @@ class EntitlementCatalog(Base):
     entitlement_name: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
     application: Mapped[str] = mapped_column(Text, nullable=False)
     owner: Mapped[str] = mapped_column(Text, nullable=False)
+    #: Nullable so a catalog file from before descriptions were added still loads.
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
 
 
 class EntitlementRiskScore(Base):

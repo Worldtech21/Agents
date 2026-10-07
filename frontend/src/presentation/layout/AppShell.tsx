@@ -302,7 +302,7 @@ export function AppShell() {
               verdictLoading={employee.verdict.isLoading}
               verdictError={employee.verdict.error}
               isSubmitting={employee.raise.isRaising}
-              onAsk={(question) => void employee.assistant.ask(question)}
+              onAsk={(question, display) => void employee.assistant.ask(question, display)}
               onConfirm={(verdict) => void employee.confirm(verdict)}
               onDismissVerdict={employee.assistant.clearIntent}
               onCancel={employee.assistant.cancel}

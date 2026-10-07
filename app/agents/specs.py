@@ -44,8 +44,10 @@ ENTITILEMENTS_AGENT = AgentSpec(
     name="Access_Verification_Agent",
     title="Access Verification Agent",
     description=(
-        "Looks up entitlements — owning application, owner, risk rating and "
-        "current holders — by entitlement id or display name."
+        "Looks up entitlements — what each one lets someone do, owning "
+        "application, owner, risk rating and current holders — by entitlement "
+        "id or display name, and finds every catalog entry that matches a "
+        "loosely worded request."
     ),
     prompt=ENTITILEMENTS_AGENT_PROMPT,
     mcp_servers=("entitlements_mcp",),

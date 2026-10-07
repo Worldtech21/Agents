@@ -66,6 +66,7 @@ class ChatService:
             logger.warning("Employee mode names %s, which matches no record", actor_id)
             return request
 
+        manager_id = await self._directory.resolve_approver(subject)
         context = build_employee_context(
             employee_id=subject.employee_id,
             name=subject.name,
@@ -74,11 +75,24 @@ class ChatService:
             department=subject.department,
             location=subject.location,
             entitlements=subject.entitlements,
-            manager_id=await self._directory.resolve_approver(subject),
+            manager_id=manager_id,
+            manager_name=await self._manager_name(manager_id),
         )
         request.messages = [ChatMessage(role="system", content=context), *request.messages]
         logger.info("Opened thread %s in employee mode as %s", request.thread_id, actor_id)
         return request
+
+    async def _manager_name(self, manager_id: str) -> str:
+        """The manager's name, so the assistant can say "Ramesh" not "EMP001".
+
+        Best effort: a manager with no record of their own leaves the id alone.
+        """
+        if not manager_id or self._directory is None:
+            return ""
+        try:
+            return (await self._directory.get_subject(manager_id)).name
+        except RecordNotFoundError:
+            return ""
 
     async def complete(self, request: RunRequest) -> dict[str, Any]:
         """Run to completion and return the final assistant turn plus state."""

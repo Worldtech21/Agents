@@ -558,6 +558,20 @@ export interface RequestIntentVM {
   readonly readyToSubmit: boolean;
 }
 
+/**
+ * A catalog entry offered when the employee's request matched more than one.
+ * Choosing it sends a follow-up turn naming it; it is not a request itself.
+ */
+export interface EntitlementCandidateVM {
+  /** Stable React key: the id where there is one, the name otherwise. */
+  readonly key: string;
+  readonly entitlementId: string | null;
+  readonly entitlementName: string;
+  readonly application: string | null;
+  readonly description: string;
+  readonly alreadyHeld: boolean;
+}
+
 /* ---------------------------------------------------------------- catalog --- */
 
 export interface CatalogEntryVM {

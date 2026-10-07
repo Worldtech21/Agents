@@ -950,6 +950,45 @@
   padding-top: 4px;
 }
 
+/* ----------------------------------------------------------- candidates --- */
+
+/* Offered under the assistant's question when a request matched several
+   entitlements. Quieter than the verdict card: nothing here is a decision. */
+.candidateList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0 6px 0;
+  padding: 0;
+  list-style: none;
+  animation: rise 0.22s ease;
+}
+
+.candidateCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-card);
+  background: var(--card);
+}
+
+.candidateCard > :not(.candidateDescription) {
+  flex: none;
+}
+
+.candidateDescription {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: var(--track-14);
+  color: var(--ink);
+  text-wrap: pretty;
+}
+
 /* -------------------------------------------------- execution flow nodes --- */
 
 /*

@@ -11,6 +11,7 @@
 import type {
   RawEmployeeReply,
   RawEntitlement,
+  RawEntitlementCandidate,
   RawRecommendationPayload,
   RawRequestIntent,
   RawSodConflict,
@@ -172,6 +173,7 @@ function normaliseEmployeeReply(record: Record<string, unknown>): RawEmployeeRep
   return {
     mode: 'employee',
     reply: asString(record.reply) ?? '',
+    candidates: asCandidates(record.candidates),
     requestIntent:
       intent && (entitlementName || entitlementId)
         ? ({
@@ -204,6 +206,21 @@ function asEntitlements(value: unknown): readonly RawEntitlement[] {
     policyRule: asString(entry.policyRule),
     recommendationStatus: asString(entry.recommendationStatus),
   }));
+}
+
+/** Candidates with neither an id nor a name cannot be chosen, so they are dropped. */
+function asCandidates(value: unknown): readonly RawEntitlementCandidate[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter(isRecord)
+    .map((entry) => ({
+      entitlementId: asString(entry.entitlementId),
+      entitlementName: asString(entry.entitlementName),
+      application: asString(entry.application),
+      description: asString(entry.description),
+      alreadyHeld: typeof entry.alreadyHeld === 'boolean' ? entry.alreadyHeld : null,
+    }))
+    .filter((entry) => entry.entitlementId !== null || entry.entitlementName !== null);
 }
 
 function asConflicts(value: unknown): readonly RawSodConflict[] | null {

@@ -392,8 +392,9 @@ entitlements = FastMCP(
     version="1.0.0",
     instructions=(
         "Two datasets. The catalog says what an entitlement is — its id "
-        "(e.g. 'ENT006'), name (e.g. 'GITHUB_DEV'), owning application and "
-        "owner. The risk scores say how dangerous it is, keyed by entitlement "
+        "(e.g. 'ENT006'), name (e.g. 'GITHUB_DEV'), owning application, "
+        "owner and a plain-language description of what the access permits. "
+        "The description says what it does, not how risky it is. The risk scores say how dangerous it is, keyed by entitlement "
         "name, with a 0-100 score and a Low/Medium/High/Critical category."
     ),
 )
@@ -429,7 +430,11 @@ def get_entitlement(entitlement_id: str) -> dict[str, Any]:
 
 @entitlements.tool
 def create_entitlement(
-    entitlement_id: str, entitlement_name: str, application: str, owner: str
+    entitlement_id: str,
+    entitlement_name: str,
+    application: str,
+    owner: str,
+    description: Annotated[str, Field(min_length=1)],
 ) -> dict[str, Any]:
     """Add a catalog entry."""
     with session_scope() as session:
@@ -439,6 +444,7 @@ def create_entitlement(
             entitlement_name=entitlement_name,
             application=application,
             owner=owner,
+            description=description,
         )
         session.add(row)
         session.flush()
@@ -451,26 +457,41 @@ def update_entitlement(
     entitlement_name: str | None = None,
     application: str | None = None,
     owner: str | None = None,
+    description: Annotated[str | None, Field(min_length=1)] = None,
 ) -> dict[str, Any]:
     """Partial update of a catalog entry."""
     with session_scope() as session:
         row = fetch_one(session, EntitlementCatalog, entitlement_id=entitlement_id)
         return apply_patch(
             row,
-            {"entitlement_name": entitlement_name, "application": application, "owner": owner},
+            {
+                "entitlement_name": entitlement_name,
+                "application": application,
+                "owner": owner,
+                "description": description,
+            },
         )
 
 
 @entitlements.tool
 def replace_entitlement(
-    entitlement_id: str, entitlement_name: str, application: str, owner: str
+    entitlement_id: str,
+    entitlement_name: str,
+    application: str,
+    owner: str,
+    description: Annotated[str, Field(min_length=1)],
 ) -> dict[str, Any]:
     """Full replacement of a catalog entry."""
     with session_scope() as session:
         row = fetch_one(session, EntitlementCatalog, entitlement_id=entitlement_id)
         return apply_patch(
             row,
-            {"entitlement_name": entitlement_name, "application": application, "owner": owner},
+            {
+                "entitlement_name": entitlement_name,
+                "application": application,
+                "owner": owner,
+                "description": description,
+            },
         )
 
 

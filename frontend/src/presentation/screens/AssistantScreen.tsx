@@ -11,9 +11,10 @@
 import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 
 import type { AssistantTurn } from '@application/hooks/useAssistant';
-import type { ThoughtSegmentVM, VerdictVM } from '@bff/viewmodels';
+import type { EntitlementCandidateVM, ThoughtSegmentVM, VerdictVM } from '@bff/viewmodels';
 import { Button } from '@presentation/atoms/Button';
 import { StatusDot } from '@presentation/atoms/StatusDot';
+import { CandidateList } from '@presentation/molecules/CandidateList';
 import { ChatBubble } from '@presentation/molecules/ChatBubble';
 import { ErrorState } from '@presentation/molecules/StateViews';
 import { ThinkingTrace } from '@presentation/molecules/ThinkingTrace';
@@ -37,7 +38,8 @@ export interface AssistantScreenProps {
   readonly verdictLoading: boolean;
   readonly verdictError: Error | null;
   readonly isSubmitting: boolean;
-  readonly onAsk: (question: string) => void;
+  /** `display`, when given, is shown in the bubble in place of `question`. */
+  readonly onAsk: (question: string, display?: string) => void;
   readonly onConfirm: (verdict: VerdictVM) => void;
   readonly onDismissVerdict: () => void;
   readonly onCancel: () => void;
@@ -75,6 +77,17 @@ export function AssistantScreen({
     setDraft('');
   };
 
+  /**
+   * Picking a candidate is just the employee's next turn. The assistant is
+   * told exactly which entitlement, so nothing is left to re-match; the
+   * employee sees the plain description they picked, never the catalog code.
+   */
+  const choose = (candidate: EntitlementCandidateVM) => {
+    if (isBusy) return;
+    const id = candidate.entitlementId ? ` (${candidate.entitlementId})` : '';
+    onAsk(`I mean ${candidate.entitlementName}${id}.`, candidate.description);
+  };
+
   const submit = (event: FormEvent) => {
     event.preventDefault();
     send(draft);
@@ -106,6 +119,14 @@ export function AssistantScreen({
           turn.message.isStreaming ? null : (
             <div key={turn.message.id}>
               <ChatBubble message={turn.message} />
+              {turn.candidates.length > 0 ? (
+                <CandidateList
+                  candidates={turn.candidates}
+                  isLive={turn.candidatesLive}
+                  disabled={isBusy}
+                  onChoose={choose}
+                />
+              ) : null}
               {/* Only the turn carrying the live proposal renders a card. */}
               {turn.intent ? (
                 <VerdictCard

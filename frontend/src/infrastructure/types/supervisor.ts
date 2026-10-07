@@ -118,6 +118,18 @@ export interface RawRequestIntent {
 }
 
 /**
+ * One catalog entry the assistant offers when it cannot tell which entitlement
+ * the employee meant. `description` is the catalog's own wording, relayed.
+ */
+export interface RawEntitlementCandidate {
+  readonly entitlementId: string | null;
+  readonly entitlementName: string | null;
+  readonly application: string | null;
+  readonly description: string | null;
+  readonly alreadyHeld: boolean | null;
+}
+
+/**
  * The employee-mode reply shape.
  *
  * Distinguished from the recommendation by the literal `mode` key, so the HR
@@ -127,6 +139,8 @@ export interface RawEmployeeReply {
   readonly mode: 'employee';
   /** Prose written for the employee to read directly. */
   readonly reply: string;
+  /** Every plausible match, while the assistant asks which one; else empty. */
+  readonly candidates: readonly RawEntitlementCandidate[];
   /** Null while the assistant is still clarifying. */
   readonly requestIntent: RawRequestIntent | null;
 }

@@ -19,7 +19,12 @@ import { useSupervisorStream } from '@application/hooks/useSupervisorStream';
 import { usePersona } from '@application/state/PersonaProvider';
 import { toChatMessages, type ConversationTurn } from '@bff/mappers/chat.mapper';
 import { toAssistantOutcome } from '@bff/outcome';
-import type { ChatMessageVM, RequestIntentVM, ThoughtSegmentVM } from '@bff/viewmodels';
+import type {
+  ChatMessageVM,
+  EntitlementCandidateVM,
+  RequestIntentVM,
+  ThoughtSegmentVM,
+} from '@bff/viewmodels';
 import { ApiError } from '@infrastructure/api/client';
 
 /** A turn plus whatever the assistant proposed on it. */
@@ -27,6 +32,13 @@ export interface AssistantTurn {
   readonly message: ChatMessageVM;
   /** Present only on the turn that produced it, and only once resolved. */
   readonly intent: RequestIntentVM | null;
+  /**
+   * The entries offered when the request matched more than one. Kept on every
+   * turn that offered them, so the conversation still reads back correctly.
+   */
+  readonly candidates: readonly EntitlementCandidateVM[];
+  /** Only the latest offer can still be chosen from; older ones are history. */
+  readonly candidatesLive: boolean;
 }
 
 export interface AssistantState {
@@ -38,7 +50,12 @@ export interface AssistantState {
   readonly liveThoughts: readonly ThoughtSegmentVM[];
   /** The most recent proposal still awaiting the employee's confirmation. */
   readonly pendingIntent: RequestIntentVM | null;
-  readonly ask: (question: string) => Promise<void>;
+  /**
+   * Send a turn. `display` is what the employee's bubble shows when that
+   * should differ from what the assistant receives — a chosen card shows its
+   * plain description while the assistant gets the exact entitlement.
+   */
+  readonly ask: (question: string, display?: string) => Promise<void>;
   readonly note: (text: string) => void;
   readonly cancel: () => void;
   readonly clear: () => void;
@@ -51,6 +68,9 @@ export function useAssistant(): AssistantState {
   const { actor } = usePersona();
   const [turns, setTurns] = useState<readonly ConversationTurn[]>([]);
   const [intents, setIntents] = useState<ReadonlyMap<string, RequestIntentVM>>(new Map());
+  const [candidates, setCandidates] = useState<
+    ReadonlyMap<string, readonly EntitlementCandidateVM[]>
+  >(new Map());
   const [dismissed, setDismissed] = useState<ReadonlySet<string>>(new Set());
   const [error, setError] = useState<ApiError | null>(null);
   const threadIdRef = useRef<string | null>(null);
@@ -76,7 +96,7 @@ export function useAssistant(): AssistantState {
   );
 
   const ask = useCallback(
-    async (question: string) => {
+    async (question: string, display?: string) => {
       const text = question.trim();
       if (!text || stream.isStreaming || !actor) return;
 
@@ -85,7 +105,7 @@ export function useAssistant(): AssistantState {
 
       setTurns((previous) => [
         ...previous,
-        { id: nextId('user'), role: 'user', text, citations: [] },
+        { id: nextId('user'), role: 'user', text: display?.trim() || text, citations: [] },
         { id: pendingId, role: 'assistant', text: '', citations: [], isStreaming: true },
       ]);
 
@@ -115,6 +135,10 @@ export function useAssistant(): AssistantState {
         if (outcome.kind === 'reply' && outcome.intent) {
           const intent = outcome.intent;
           setIntents((previous) => new Map(previous).set(pendingId, intent));
+        }
+        if (outcome.kind === 'reply' && outcome.candidates.length > 0) {
+          const offered = outcome.candidates;
+          setCandidates((previous) => new Map(previous).set(pendingId, offered));
         }
 
         setTurns((previous) =>
@@ -154,6 +178,7 @@ export function useAssistant(): AssistantState {
     threadIdRef.current = null;
     setTurns([]);
     setIntents(new Map());
+    setCandidates(new Map());
     setDismissed(new Set());
     setError(null);
   }, [stream]);
@@ -178,9 +203,20 @@ export function useAssistant(): AssistantState {
       messages.map((message) => ({
         message,
         intent: dismissed.has(message.id) ? null : (intents.get(message.id) ?? null),
+        candidates: candidates.get(message.id) ?? [],
+        candidatesLive: false,
       })),
-    [messages, intents, dismissed],
+    [messages, intents, candidates, dismissed],
   );
+
+  /**
+   * An offer is live only while it is the last assistant turn: once the
+   * employee has said anything further, it has been answered or set aside.
+   */
+  const liveCandidatesId = useMemo(() => {
+    const last = assistantTurns[assistantTurns.length - 1];
+    return last && last.candidates.length > 0 ? last.message.id : null;
+  }, [assistantTurns]);
 
   /** Only the latest proposal is live; an older one has been superseded. */
   const latestIntentId = useMemo(() => {
@@ -199,9 +235,11 @@ export function useAssistant(): AssistantState {
   return {
     // Suppress every proposal but the most recent, so the conversation never
     // shows two confirmation cards at once.
-    turns: assistantTurns.map((turn) =>
-      turn.message.id === latestIntentId ? turn : { ...turn, intent: null },
-    ),
+    turns: assistantTurns.map((turn) => ({
+      ...turn,
+      intent: turn.message.id === latestIntentId ? turn.intent : null,
+      candidatesLive: turn.message.id === liveCandidatesId,
+    })),
     isBusy: stream.isStreaming,
     error,
     threadId: threadIdRef.current,
